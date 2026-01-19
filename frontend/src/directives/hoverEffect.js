@@ -68,10 +68,8 @@ export default {
   }
 }
 
-/**
- * 简单版本的导出（别名，保持向后兼容）
- */
-export const simpleHoverEffect = export default
+// 如果需要简单版本的导出，可以将其作为命名导出来实现
+export const simpleHoverEffect = {
   mounted(el, binding) {
     const options = binding.value || {}
     const type = options.type || 'lift'

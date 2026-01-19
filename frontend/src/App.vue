@@ -54,7 +54,7 @@ import SidebarNavigation from './components/layout/SidebarNavigation.vue'
 
 .main-content {
   flex: 1;
-  padding: 24px;
+  padding: 10px;
   background-color: #f5f7fa;
   overflow-y: auto;
   overflow-x: hidden;
