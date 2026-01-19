@@ -2,7 +2,7 @@
   <div class="sidebar-navigation" :class="{ 'collapsed': collapsed }">
     <div class="sidebar-header">
       <div class="brand-section" v-if="!collapsed">
-        <h3>导航菜单</h3>
+        <h3><el-icon><Menu /></el-icon></h3>
       </div>
       <el-button
         link
@@ -98,7 +98,8 @@ import {
   Grid,
   DataLine,
   Search,
-  Share
+  Share,
+  Menu
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -126,7 +127,7 @@ const emit = defineEmits(['toggle'])
 
 <style scoped>
 .sidebar-navigation {
-  width: 240px;
+  width: 180px;
   height: 100%;
   background: white;
   border-right: 1px solid #e8e8e8;
@@ -145,20 +146,23 @@ const emit = defineEmits(['toggle'])
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid #e8e8e8;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 60px;
+  min-height: 40px;
 }
 
 .brand-section {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .brand-section h3 {
   margin: 0;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -179,6 +183,7 @@ const emit = defineEmits(['toggle'])
 
 .nav-menu {
   border-right: none;
+  background-color: white;
 }
 
 .nav-menu .el-menu-item {
@@ -215,6 +220,7 @@ const emit = defineEmits(['toggle'])
 
 .collapsed-menu {
   border-right: none;
+  background-color: white;
   width: 100%;
 }
 

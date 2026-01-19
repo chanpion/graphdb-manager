@@ -264,7 +264,6 @@ const handleTabAction = (command) => {
       
     case 'show-all':
       // 可以在这里实现显示所有标签页的预览功能
-      console.log('显示所有标签页')
       break
   }
 }

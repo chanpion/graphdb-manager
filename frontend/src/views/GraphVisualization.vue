@@ -2,32 +2,9 @@
   <div class="graph-visualization">
     <el-container>
       <!-- 左侧查询面板 -->
-      <el-aside width="320px" class="query-panel">
+      <el-aside width="300px" class="query-panel">
         <div class="panel-header">
           <h3>图查询</h3>
-
-        </div>
-
-
-
-        <!-- 查询模板 -->
-        <div class="section template-section">
-          <h4>查询模板</h4>
-          <el-select
-            v-model="selectedTemplate"
-            placeholder="选择查询模板"
-            size="small"
-            style="width: 100%"
-            @change="applyTemplate"
-          >
-            <el-option label="基本节点查询" value="basic_nodes" />
-            <el-option label="基本边查询" value="basic_edges" />
-            <el-option label="路径查询" value="path_query" />
-            <el-option label="邻居节点查询" value="neighbors_query" />
-            <el-option label="属性过滤查询" value="property_filter" />
-            <el-option label="聚合统计查询" value="aggregation_query" />
-            <el-option label="自定义模板" value="custom" />
-          </el-select>
         </div>
 
         <!-- 查询编辑器 -->
@@ -121,60 +98,61 @@
 
         <!-- 可视化画布 -->
         <div class="viz-canvas-container" ref="vizContainer">
-          <D3Graph 
-            v-if="graphData.nodes.length > 0"
-            :data="graphData"
-            :width="vizWidth"
-            :height="vizHeight"
-            @node-click="onNodeClick"
-            @edge-click="onEdgeClick"
-            class="viz-graph"
-          />
-          
-          <!-- 节点/边详情浮动面板 -->
-          <div v-if="detailDrawerVisible && selectedElement" class="detail-panel">
-            <div class="detail-header">
-              <h3>{{ selectedElement.type === 'node' ? '节点详情' : '边详情' }}</h3>
-              <el-button 
-                type="text" 
-                size="small" 
-                @click="closeDetailPanel"
-                class="close-btn"
-              >
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
+          <div v-if="graphData.nodes.length > 0" class="graph-container">
+            <D3Graph 
+              :data="graphData"
+              :width="vizWidth"
+              :height="vizHeight"
+              @node-click="onNodeClick"
+              @edge-click="onEdgeClick"
+              class="viz-graph"
+            />
             
-            <div class="detail-content">
-              <div class="detail-section">
-                <h4>基础信息</h4>
-                <el-descriptions :column="1" border size="small">
-                  <el-descriptions-item label="ID">{{ selectedElement.id }}</el-descriptions-item>
-                  <el-descriptions-item label="标签" v-if="selectedElement.type === 'node'">{{ selectedElement.label }}</el-descriptions-item>
-                  <el-descriptions-item label="类型" v-if="selectedElement.type === 'edge'">{{ selectedElement.label }}</el-descriptions-item>
-                </el-descriptions>
+            <!-- 节点/边详情浮动面板 -->
+            <div v-if="detailDrawerVisible && selectedElement" class="detail-panel">
+              <div class="detail-header">
+                <h3>{{ selectedElement.type === 'node' ? '节点详情' : '边详情' }}</h3>
+                <el-button 
+                  type="text" 
+                  size="small" 
+                  @click="closeDetailPanel"
+                  class="close-btn"
+                >
+                  <el-icon><Close /></el-icon>
+                </el-button>
               </div>
+              
+              <div class="detail-content">
+                <div class="detail-section">
+                  <h4>基础信息</h4>
+                  <el-descriptions :column="1" border size="small">
+                    <el-descriptions-item label="ID">{{ selectedElement.id }}</el-descriptions-item>
+                    <el-descriptions-item label="标签" v-if="selectedElement.type === 'node'">{{ selectedElement.label }}</el-descriptions-item>
+                    <el-descriptions-item label="类型" v-if="selectedElement.type === 'edge'">{{ selectedElement.label }}</el-descriptions-item>
+                  </el-descriptions>
+                </div>
 
-              <div class="detail-section" v-if="selectedElement.properties && Object.keys(selectedElement.properties).length > 0">
-                <h4>属性</h4>
-                <div class="property-list">
-                  <div 
-                    v-for="(value, key) in selectedElement.properties" 
-                    :key="key"
-                    class="property-item"
-                  >
-                    <span class="property-key">{{ key }}:</span>
-                    <span class="property-value">{{ value }}</span>
+                <div class="detail-section" v-if="selectedElement.properties && Object.keys(selectedElement.properties).length > 0">
+                  <h4>属性</h4>
+                  <div class="property-list">
+                    <div 
+                      v-for="(value, key) in selectedElement.properties" 
+                      :key="key"
+                      class="property-item"
+                    >
+                      <span class="property-key">{{ key }}:</span>
+                      <span class="property-value">{{ value }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="detail-section" v-if="selectedElement.type === 'node'">
-                <h4>邻居节点</h4>
-                <el-button size="small" @click="expandNode(selectedElement.id)">
-                  <el-icon><Plus /></el-icon>
-                  展开邻居
-                </el-button>
+                <div class="detail-section" v-if="selectedElement.type === 'node'">
+                  <h4>邻居节点</h4>
+                  <el-button size="small" @click="expandNode(selectedElement.id)">
+                    <el-icon><Plus /></el-icon>
+                    展开邻居
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>
@@ -912,6 +890,12 @@ const formatTime = (timestamp) => {
   padding: 5px;
   overflow: hidden;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  position: relative;
+}
+
+.graph-container {
+  width: 100%;
+  height: 100%;
   position: relative;
 }
 

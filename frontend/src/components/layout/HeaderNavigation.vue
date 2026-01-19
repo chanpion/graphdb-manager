@@ -68,10 +68,7 @@ import { storeToRefs } from 'pinia'
 import { useTabStore } from '@/stores/tab'
 import { useGraphStore } from '@/stores/graph'
 import { 
-  DataLine,
-  Search,
-  Sunny,
-  Moon
+  DataLine
 } from '@element-plus/icons-vue'
 
 // 组件导入
@@ -84,14 +81,6 @@ const props = defineProps({
   showTabs: {
     type: Boolean,
     default: true
-  },
-  showSearch: {
-    type: Boolean,
-    default: true
-  },
-  showNotifications: {
-    type: Boolean,
-    default: false
   },
   showUserName: {
     type: Boolean,
@@ -109,9 +98,6 @@ const emit = defineEmits([
 const tabStore = useTabStore()
 const graphStore = useGraphStore()
 const { selectedConnectionId, selectedGraphName, graphs } = storeToRefs(graphStore)
-
-// 搜索关键词
-const searchKeyword = ref('')
 
 // 主题状态
 const isDarkTheme = ref(false)
@@ -146,18 +132,7 @@ const userProfile = ref({
   department: '技术部'
 })
 
-// 处理搜索
-const handleSearch = () => {
-  if (searchKeyword.value.trim()) {
-    emit('search', searchKeyword.value)
-    
-    // 这里可以实现全局搜索功能
-    console.log('执行全局搜索:', searchKeyword.value)
-    
-    // 清空搜索框
-    searchKeyword.value = ''
-  }
-}
+
 
 // 切换主题
 const toggleTheme = () => {
@@ -195,22 +170,21 @@ const handleUserCommand = (command) => {
 
 // 处理标签页点击
 const handleTabClick = (tabId) => {
-  console.log('标签页点击:', tabId)
+  // 标签页点击处理
 }
 
 // 处理标签页关闭
 const handleTabClose = (tabId) => {
-  console.log('标签页关闭:', tabId)
+  // 标签页关闭处理
 }
 
 // 处理标签页刷新
 const handleTabRefresh = (tabId) => {
-  console.log('标签页刷新:', tabId)
+  // 标签页刷新处理
 }
 
 // 处理图变更
 const handleGraphChange = (graph) => {
-  console.log('图选择变更:', graph)
   
   if (graph && typeof graph === 'object') {
     // 设置连接ID和图名称
@@ -307,49 +281,13 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-.search-container {
-  width: 200px;
-}
 
-.global-search :deep(.el-input__wrapper) {
-  border-radius: 16px;
-  background-color: #f8f9fa;
-  border: 1px solid #e8e8e8;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.global-search :deep(.el-input__wrapper:hover) {
-  background-color: #f0f4ff;
-  border-color: #1890ff;
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.global-search :deep(.el-input__wrapper.is-focus) {
-  background-color: #ffffff;
-  border-color: #1890ff;
-  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1), 0 2px 12px rgba(24, 144, 255, 0.2);
-  transform: translateY(-1px);
-}
 
 .api-switcher {
   margin-right: 8px;
 }
 
-.theme-toggle-btn {
-  padding: 8px;
-  color: #606266;
-}
 
-.theme-toggle-btn:hover {
-  background-color: #f5f7fa;
-  color: #1890ff;
-}
-
-.theme-icon {
-  font-size: 18px;
-}
 
 
 
@@ -357,22 +295,7 @@ onMounted(async () => {
   margin-left: 8px;
 }
 
-.nav-center {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  max-width: calc(100% - 400px);
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
 
-.nav-center::-webkit-scrollbar {
-  display: none;
-}
 
 .tabs-section-inline {
   flex: 1;
@@ -426,18 +349,7 @@ onMounted(async () => {
 
 
 
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
 
-.header-title {
-  font-weight: 600;
-  color: #1f2d3d;
-  font-size: 14px;
-}
 
 
 
@@ -449,10 +361,6 @@ onMounted(async () => {
 @media (max-width: 992px) {
   .nav-left {
     gap: 16px;
-  }
-  
-  .search-container {
-    width: 240px;
   }
 }
 

@@ -180,7 +180,7 @@ const schemaStore = useSchemaStore()
 
 // 状态管理
 const graphStore = useGraphStore()
-const { selectedGraphName } = storeToRefs(graphStore)
+const graphStoreRefs = storeToRefs(graphStore)
 
 // 使用路由
 const router = useRouter()
@@ -200,9 +200,9 @@ const selectedConnectionId = computed({
 })
 
 const selectedGraphName = computed({
-  get: () => schemaStore.selectedGraphName,
+  get: () => graphStoreRefs.selectedGraphName.value,
   set: (value) => {
-    schemaStore.selectedGraphName = value
+    graphStore.selectedGraphName = value
   }
 })
 
