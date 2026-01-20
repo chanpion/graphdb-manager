@@ -125,7 +125,7 @@
               <div class="detail-content">
                 <div class="detail-section">
                   <h4>基础信息</h4>
-                  <el-descriptions :column="1" border size="small">
+                  <el-descriptions :column="1" border size="small" class="compact-descriptions">
                     <el-descriptions-item label="ID">{{ selectedElement.id }}</el-descriptions-item>
                     <el-descriptions-item label="标签" v-if="selectedElement.type === 'node'">{{ selectedElement.label }}</el-descriptions-item>
                     <el-descriptions-item label="类型" v-if="selectedElement.type === 'edge'">{{ selectedElement.label }}</el-descriptions-item>
@@ -135,8 +135,8 @@
                 <div class="detail-section" v-if="selectedElement.properties && Object.keys(selectedElement.properties).length > 0">
                   <h4>属性</h4>
                   <div class="property-list">
-                    <div 
-                      v-for="(value, key) in selectedElement.properties" 
+                    <div
+                      v-for="(value, key) in selectedElement.properties"
                       :key="key"
                       class="property-item"
                     >
@@ -304,8 +304,8 @@ onUnmounted(() => {
 const updateVizDimensions = () => {
   if (vizContainer.value) {
     const containerRect = vizContainer.value.getBoundingClientRect()
-    vizWidth.value = containerRect.width - 20
-    vizHeight.value = containerRect.height - 20
+    vizWidth.value = containerRect.width
+    vizHeight.value = containerRect.height
   }
 }
 
@@ -628,6 +628,17 @@ const formatTime = (timestamp) => {
 .graph-visualization {
   height: calc(100vh - 64px); /* 减去顶部导航栏高度 */
   overflow: hidden;
+  display: flex;
+}
+
+.graph-visualization :deep(.el-container) {
+  height: 100%;
+  display: flex;
+}
+
+.graph-visualization :deep(.el-aside) {
+  height: 100%;
+  overflow-y: auto;
 }
 
 :deep(.el-main) {
@@ -641,6 +652,7 @@ const formatTime = (timestamp) => {
   padding: 16px;
   height: 100%;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .panel-header {
@@ -848,6 +860,7 @@ const formatTime = (timestamp) => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .viz-toolbar {
@@ -887,7 +900,7 @@ const formatTime = (timestamp) => {
 
 .viz-canvas-container {
   flex: 1;
-  padding: 5px;
+  padding: 0;
   overflow: hidden;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   position: relative;
@@ -897,6 +910,7 @@ const formatTime = (timestamp) => {
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 .viz-graph {
@@ -949,26 +963,28 @@ const formatTime = (timestamp) => {
 .property-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .property-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: #f8f9fa;
-  border-radius: 4px;
+  border-radius: 3px;
   border-left: 3px solid #6366F1;
 }
 
 .property-key {
   font-weight: 500;
   color: #333;
+  font-size: 12px;
 }
 
 .property-value {
   color: #666;
-  max-width: 150px;
+  max-width: 90px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -978,11 +994,11 @@ const formatTime = (timestamp) => {
 .detail-panel {
   position: absolute;
   top: 20px;
-  right: 20px;
-  width: 320px;
-  max-height: 80%;
+  right: 0;
+  width: 220px;
+  max-height: 90%;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   overflow: hidden;
@@ -994,20 +1010,20 @@ const formatTime = (timestamp) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: #f8f9fa;
   border-bottom: 1px solid #e8e8e8;
 }
 
 .detail-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #1f2d3d;
 }
 
 .close-btn {
-  padding: 4px;
+  padding: 2px;
   color: #909399;
   transition: color 0.2s ease;
 }
@@ -1019,11 +1035,11 @@ const formatTime = (timestamp) => {
 .detail-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 20px 20px 20px;
+  padding: 0 16px 16px 16px;
 }
 
 .detail-section {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .detail-section:first-child {
@@ -1031,11 +1047,35 @@ const formatTime = (timestamp) => {
 }
 
 .detail-section h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  margin: 0 0 6px 0;
+  font-size: 13px;
   font-weight: 600;
   color: #606266;
 }
+
+/* 紧凑型描述列表样式 */
+.compact-descriptions :deep(.el-descriptions__label) {
+  font-size: 12px !important;
+  padding: 6px 8px !important;
+}
+
+.compact-descriptions :deep(.el-descriptions__content) {
+  font-size: 12px !important;
+  padding: 6px 8px !important;
+}
+
+.compact-descriptions :deep(.el-descriptions__cell) {
+  padding: 0 !important;
+}
+
+.compact-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
+  padding: 6px 8px !important;
+}
+
+.compact-descriptions :deep(.el-descriptions__body .el-descriptions__table .el-descriptions__cell) {
+  padding: 6px 8px !important;
+}
+
 
 /* 统计信息面板样式 */
 .stats-panel {

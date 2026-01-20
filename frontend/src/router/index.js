@@ -4,10 +4,20 @@ import { installTabGuard } from './guards/tabGuard'
 const routes = [
   {
     path: '/',
+    name: 'Dashboard',
+    component: () => import('../views/Dashboard.vue'),
+    meta: {
+      title: '仪表盘',
+      icon: 'monitor',
+      closable: true
+    }
+  },
+  {
+    path: '/home',
     name: 'Home',
     component: () => import('../views/Home.vue'),
     meta: {
-      title: '首页',
+      title: '旧版首页',
       icon: 'house',
       closable: true
     }
