@@ -313,5 +313,54 @@ export const graphApi = {
         resolve({ data: { success: true, message: '导出任务取消成功' } })
       }, 500)
     })
+  },
+
+  // 查询执行
+  executeQuery(connectionId, graphName, language, query) {
+    // TODO: 调用真实API
+    // return request({
+    //   method: 'post',
+    //   url: `/connections/${connectionId}/graphs/${graphName}/query`,
+    //   data: {
+    //     language,
+    //     query
+    //   }
+    // })
+
+    // 临时模拟数据
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        try {
+          // 根据查询语句生成不同的模拟数据
+          const mockData = {
+            nodes: [
+              { id: 'node1', label: 'Person', properties: { name: 'Alice', age: 30, city: 'New York' } },
+              { id: 'node2', label: 'Person', properties: { name: 'Bob', age: 35, city: 'San Francisco' } },
+              { id: 'node3', label: 'Company', properties: { name: 'TechCorp', industry: 'Technology', employees: 1000 } },
+              { id: 'node4', label: 'Person', properties: { name: 'Charlie', age: 28, city: 'Boston' } },
+              { id: 'node5', label: 'Company', properties: { name: 'DataInc', industry: 'Data Analytics', employees: 500 } },
+              { id: 'node6', label: 'Person', properties: { name: 'Diana', age: 32, city: 'Seattle' } },
+              { id: 'node7', label: 'Person', properties: { name: 'Eve', age: 29, city: 'Austin' } },
+              { id: 'node8', label: 'Company', properties: { name: 'CloudTech', industry: 'Cloud Computing', employees: 2500 } }
+            ],
+            edges: [
+              { id: 'edge1', source: 'node1', target: 'node2', label: 'KNOWS', properties: { since: '2020-01-01' } },
+              { id: 'edge2', source: 'node1', target: 'node3', label: 'WORKS_FOR', properties: { position: 'Engineer', startDate: '2019-06-01' } },
+              { id: 'edge3', source: 'node2', target: 'node4', label: 'KNOWS', properties: { since: '2021-03-15' } },
+              { id: 'edge4', source: 'node4', target: 'node5', label: 'WORKS_FOR', properties: { position: 'Data Scientist', startDate: '2022-01-10' } },
+              { id: 'edge5', source: 'node6', target: 'node3', label: 'WORKS_FOR', properties: { position: 'Manager', startDate: '2018-05-20' } },
+              { id: 'edge6', source: 'node7', target: 'node8', label: 'WORKS_FOR', properties: { position: 'DevOps Engineer', startDate: '2021-09-15' } },
+              { id: 'edge7', source: 'node1', target: 'node6', label: 'KNOWS', properties: { since: '2019-11-20' } },
+              { id: 'edge8', source: 'node2', target: 'node7', label: 'KNOWS', properties: { since: '2020-07-30' } },
+              { id: 'edge9', source: 'node3', target: 'node8', label: 'PARTNERS_WITH', properties: { since: '2020-02-01' } },
+              { id: 'edge10', source: 'node5', target: 'node8', label: 'PARTNERS_WITH', properties: { since: '2021-06-15' } }
+            ]
+          }
+          resolve({ data: mockData })
+        } catch (error) {
+          reject(error)
+        }
+      }, 1000 + Math.random() * 2000)
+    })
   }
 }

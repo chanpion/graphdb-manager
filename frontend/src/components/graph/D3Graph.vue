@@ -4,77 +4,86 @@
     <div class="graph-toolbar">
       <!-- 布局切换 -->
       <div class="toolbar-section">
-        <el-select v-model="currentLayout" size="small" @change="changeLayout" style="width: 120px;">
-          <el-option label="力导向" value="force" />
-          <el-option label="圆形" value="circular" />
-          <el-option label="分层" value="hierarchical" />
-          <el-option label="网格" value="grid" />
-        </el-select>
+        <el-tooltip content="布局切换" placement="bottom">
+          <el-select v-model="currentLayout" size="small" @change="changeLayout" style="width: 80px;">
+            <el-option label="力导向" value="force" />
+            <el-option label="圆形" value="circular" />
+            <el-option label="分层" value="hierarchical" />
+            <el-option label="网格" value="grid" />
+          </el-select>
+        </el-tooltip>
       </div>
       
       <!-- 展开控制 -->
       <div class="toolbar-section">
         <el-button-group size="small">
-          <el-button @click="expandSelectedNode" :disabled="!selectedNode">
-            <el-icon><plus /></el-icon> 展开
-          </el-button>
-          <el-button @click="collapseSelectedNode" :disabled="!selectedNode">
-            <el-icon><minus /></el-icon> 收起
-          </el-button>
+          <el-tooltip content="展开邻居" placement="bottom">
+            <el-button @click="expandSelectedNode" :disabled="!selectedNode">
+              <el-icon><plus /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="收起邻居" placement="bottom">
+            <el-button @click="collapseSelectedNode" :disabled="!selectedNode">
+              <el-icon><minus /></el-icon>
+            </el-button>
+          </el-tooltip>
         </el-button-group>
       </div>
       
       <!-- 缩放控制 -->
       <div class="toolbar-section">
         <el-button-group size="small">
-          <el-button @click="zoomIn">
-            <el-icon><zoom-in /></el-icon>
-          </el-button>
-          <el-button @click="zoomOut">
-            <el-icon><zoom-out /></el-icon>
-          </el-button>
-          <el-button @click="resetView">
-            <el-icon><refresh /></el-icon>
-          </el-button>
+          <el-tooltip content="放大" placement="bottom">
+            <el-button @click="zoomIn">
+              <el-icon><zoom-in /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="缩小" placement="bottom">
+            <el-button @click="zoomOut">
+              <el-icon><zoom-out /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="重置视图" placement="bottom">
+            <el-button @click="resetView">
+              <el-icon><refresh /></el-icon>
+            </el-button>
+          </el-tooltip>
         </el-button-group>
       </div>
       
       <!-- 导出功能 -->
       <div class="toolbar-section">
-        <el-dropdown @command="handleExport">
-          <el-button size="small">
-            <el-icon><download /></el-icon> 导出
-            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="png">PNG图片</el-dropdown-item>
-              <el-dropdown-item command="svg">SVG矢量图</el-dropdown-item>
-              <el-dropdown-item command="json">JSON数据</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <el-tooltip content="导出" placement="bottom">
+          <el-dropdown @command="handleExport">
+            <el-button size="small">
+              <el-icon><download /></el-icon>
+              <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="png">PNG图片</el-dropdown-item>
+                <el-dropdown-item command="svg">SVG矢量图</el-dropdown-item>
+                <el-dropdown-item command="json">JSON数据</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </el-tooltip>
       </div>
     </div>
     
     <!-- 左下角图例 -->
     <div class="legend-bottom-left">
       <div class="legend">
-        <div class="legend-item">
-          <div class="node-sample node-person"></div>
-          <span>人员节点</span>
+        <!-- 动态节点类型图例 -->
+        <div v-for="nodeType in uniqueNodeTypes" :key="`node-${nodeType}`" class="legend-item">
+          <div class="node-sample" :class="getNodeClass(nodeType)"></div>
+          <span>{{ nodeType }}</span>
         </div>
-        <div class="legend-item">
-          <div class="node-sample node-company"></div>
-          <span>公司节点</span>
-        </div>
-        <div class="legend-item">
-          <div class="node-sample node-product"></div>
-          <span>产品节点</span>
-        </div>
-        <div class="legend-item">
+        
+        <!-- 动态边类型图例 -->
+        <div v-for="edgeType in uniqueEdgeTypes" :key="`edge-${edgeType}`" class="legend-item">
           <div class="edge-sample"></div>
-          <span>关系边</span>
+          <span>{{ edgeType }}</span>
         </div>
       </div>
     </div>
@@ -154,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import * as d3 from 'd3'
 import { ElMessage } from 'element-plus'
 import { ZoomIn, ZoomOut, Refresh, Close, Plus, Minus, Search, Download, ArrowDown, Share, InfoFilled } from '@element-plus/icons-vue'
@@ -204,6 +213,29 @@ let d3EdgesLayer = null
 let d3Nodes = null
 let d3Edges = null
 
+// 计算唯一节点和边类型
+const uniqueNodeTypes = computed(() => {
+  if (!props.data || !props.data.nodes) return []
+  const types = new Set()
+  props.data.nodes.forEach(node => {
+    if (node.label) {
+      types.add(node.label)
+    }
+  })
+  return Array.from(types)
+})
+
+const uniqueEdgeTypes = computed(() => {
+  if (!props.data || !props.data.edges) return []
+  const types = new Set()
+  props.data.edges.forEach(edge => {
+    if (edge.label) {
+      types.add(edge.label)
+    }
+  })
+  return Array.from(types)
+})
+
 // 初始化图表
 function initChart() {
   if (!svg.value) return
@@ -248,6 +280,7 @@ function initSimulation() {
     .force('center', d3.forceCenter(props.width / 2, props.height / 2))
     .force('collision', d3.forceCollide().radius(40))
     .on('tick', ticked)
+    .alphaDecay(0.0228); // 控制模拟收敛速度，使动画更平滑
 }
 
 // 切换布局算法
@@ -279,12 +312,18 @@ function changeLayout() {
 
 // 力导向布局
 function initForceLayout() {
+  if (!props.data.nodes || !props.data.edges) return
+  
   simulation.value = d3.forceSimulation(props.data.nodes)
     .force('link', d3.forceLink(props.data.edges).id(d => d.id).distance(100))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(props.width / 2, props.height / 2))
     .force('collision', d3.forceCollide().radius(40))
     .on('tick', ticked)
+    .alphaDecay(0.0228); // 控制模拟收敛速度，使动画更平滑
+  
+  // 启动模拟
+  simulation.value.alpha(1).restart()
 }
 
 // 圆形布局
@@ -350,20 +389,25 @@ function initGridLayout() {
 function renderData() {
   if (!props.data.nodes || !props.data.edges) return
   
-  // 创建边 - 改进方向显示
+  // 更新边 - 使用完整的数据绑定模式（enter, update, exit）
   d3Edges = d3EdgesLayer
     .selectAll('g.edge-group')
-    .data(props.data.edges)
-    .enter()
+    .data(props.data.edges, d => d.id)
+  
+  // 移除多余的边
+  d3Edges.exit().remove()
+  
+  // 创建新的边
+  const edgeGroups = d3Edges.enter()
     .append('g')
     .attr('class', 'edge-group')
     .on('click', (event, d) => {
       event.stopPropagation()
       emit('edge-click', d)
     })
-
+  
   // 添加边线条
-  d3Edges
+  edgeGroups
     .append('line')
     .attr('class', 'edge-line')
     .attr('stroke', '#666')
@@ -378,7 +422,7 @@ function renderData() {
     })
 
   // 添加边标签
-  d3Edges
+  edgeGroups
     .append('text')
     .attr('class', 'edge-label')
     .attr('text-anchor', 'middle')
@@ -388,11 +432,19 @@ function renderData() {
     .attr('font-weight', 'bold')
     .text(d => d.label || '')
   
-  // 创建节点
+  // 将新添加的边与现有边合并
+  d3Edges = d3Edges.merge(edgeGroups)
+  
+  // 更新节点 - 使用完整的数据绑定模式（enter, update, exit）
   d3Nodes = d3NodesLayer
     .selectAll('g.node')
-    .data(props.data.nodes)
-    .enter()
+    .data(props.data.nodes, d => d.id)
+  
+  // 移除多余的节点
+  d3Nodes.exit().remove()
+  
+  // 创建新节点
+  const nodeGroups = d3Nodes.enter()
     .append('g')
     .attr('class', 'node')
     .call(d3.drag()
@@ -412,14 +464,14 @@ function renderData() {
     })
   
   // 添加节点圆圈
-  d3Nodes.append('circle')
+  nodeGroups.append('circle')
     .attr('r', 20)
     .attr('fill', d => getNodeColor(d.label))
     .attr('stroke', '#fff')
     .attr('stroke-width', 3)
   
   // 添加节点标签
-  d3Nodes.append('text')
+  nodeGroups.append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', '.35em')
     .attr('fill', '#333')
@@ -427,20 +479,36 @@ function renderData() {
     .attr('font-weight', 'bold')
     .text(d => d.label || d.id.substring(0, 8))
   
+  // 将新添加的节点与现有节点合并
+  d3Nodes = d3Nodes.merge(nodeGroups)
+  
   // 更新模拟数据
   updateSimulation()
 }
 
 // 更新模拟数据
 function updateSimulation() {
-  if (!simulation.value) return
+  if (!props.data.nodes || !props.data.edges) return
   
-  // 更新节点和边
-  simulation.value.nodes(props.data.nodes)
-  simulation.value.force('link').links(props.data.edges)
-  
-  // 重新启动模拟
-  simulation.value.alpha(0.3).restart()
+  // 如果模拟不存在，创建新的模拟
+  if (!simulation.value) {
+    simulation.value = d3.forceSimulation(props.data.nodes)
+      .force('link', d3.forceLink(props.data.edges).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(props.width / 2, props.height / 2))
+      .force('collision', d3.forceCollide().radius(40))
+      .on('tick', ticked)
+  } else {
+    // 更新现有模拟的节点和边
+    simulation.value.nodes(props.data.nodes)
+    simulation.value.force('link', d3.forceLink(props.data.edges).id(d => d.id).distance(100))
+    simulation.value.force('charge', d3.forceManyBody().strength(-300))
+    simulation.value.force('center', d3.forceCenter(props.width / 2, props.height / 2))
+    simulation.value.force('collision', d3.forceCollide().radius(40))
+    
+    // 重新启动模拟并设置初始alpha值，确保节点分散开来
+    simulation.value.alpha(1).restart()
+  }
 }
 
 // 模拟 tick 事件
@@ -792,6 +860,18 @@ function getNodeColor(label) {
   return colors[label] || colors.default
 }
 
+// 获取节点CSS类
+function getNodeClass(label) {
+  const classes = {
+    'Person': 'node-person',
+    'Company': 'node-company',
+    'Product': 'node-product',
+    'default': 'node-default'
+  }
+  
+  return classes[label] || classes.default
+}
+
 // 缩放控制
 function zoomIn() {
   if (!d3Svg || !zoom.value) return
@@ -814,13 +894,19 @@ function resetView() {
 // 监听数据变化
 watch(() => props.data, (newData) => {
   if (newData.nodes && newData.edges) {
-    if (d3Nodes && d3Edges) {
-      // 更新现有数据
-      updateSimulation()
-    } else {
-      // 重新渲染
-      initChart()
+    // 清理现有元素
+    if (d3EdgesLayer) {
+      d3.select(edgesLayer.value).selectAll('*').remove();
     }
+    if (d3NodesLayer) {
+      d3.select(nodesLayer.value).selectAll('*').remove();
+    }
+    
+    // 重新渲染数据
+    renderData();
+    
+    // 更新模拟
+    updateSimulation();
   }
 }, { deep: true })
 
@@ -940,8 +1026,8 @@ function exportAsJSON() {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: #f5f7fa;
-  border-radius: 8px;
+  background-color: #fff;
+  border-radius: 0px;
   overflow: hidden;
 }
 
@@ -951,9 +1037,9 @@ function exportAsJSON() {
   left: 16px;
   z-index: 10;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 12px;
+  padding: 8px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
@@ -963,6 +1049,26 @@ function exportAsJSON() {
 .toolbar-section {
   display: flex;
   align-items: center;
+}
+
+.graph-toolbar .el-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-toolbar .el-icon {
+  width: unset;
+  height: unset;
+}
+
+.graph-toolbar .el-button .el-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .graph-container {
@@ -1013,6 +1119,10 @@ function exportAsJSON() {
 
 .node-product {
   background-color: #E6A23C;
+}
+
+.node-default {
+  background-color: #909399;
 }
 
 .edge-sample {

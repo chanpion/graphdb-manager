@@ -91,6 +91,16 @@ const routes = [
       icon: 'share',
       closable: true
     }
+  },
+  {
+    path: '/graph-visualization-echarts',
+    name: 'GraphVisualizationECharts',
+    component: () => import('../views/GraphVisualizationECharts.vue'),
+    meta: {
+      title: 'ECharts图分析',
+      icon: 'share',
+      closable: true
+    }
   }
 ]
 

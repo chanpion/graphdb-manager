@@ -48,7 +48,12 @@
 
         <el-menu-item index="/graph-visualization">
           <el-icon><Share /></el-icon>
-          <span>图分析</span>
+          <span>图分析 (D3)</span>
+        </el-menu-item>
+
+        <el-menu-item index="/graph-visualization-echarts">
+          <el-icon><Share /></el-icon>
+          <span>图分析 (ECharts)</span>
         </el-menu-item>
       </el-menu>
     </div>
@@ -79,7 +84,11 @@
           <el-icon><Search /></el-icon>
         </el-menu-item>
 
-        <el-menu-item index="/graph-visualization" :title="'图分析'">
+        <el-menu-item index="/graph-visualization" :title="'图分析 (D3)'">
+          <el-icon><Share /></el-icon>
+        </el-menu-item>
+
+        <el-menu-item index="/graph-visualization-echarts" :title="'图分析 (ECharts)'">
           <el-icon><Share /></el-icon>
         </el-menu-item>
       </el-menu>
