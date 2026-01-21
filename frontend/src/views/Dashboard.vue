@@ -190,33 +190,35 @@ export default {
 
 <style scoped>
 .dashboard-container {
-  padding: 24px;
+  padding: 16px;
   max-width: 1200px;
   margin: 0 auto;
   min-height: calc(100vh - 64px);
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* 欢迎区域 */
 .welcome-section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .tech-gradient {
   background: linear-gradient(135deg, #409EFF 0%, #3375B9 50%, #2C6AA0 100%);
-  border-radius: 12px;
-  padding: 32px;
+  border-radius: 10px;
+  padding: 20px 24px;
   color: white;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 .welcome-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .welcome-subtitle {
-  font-size: 16px;
+  font-size: 14px;
   opacity: 0.9;
   margin: 0;
 }
@@ -225,14 +227,14 @@ export default {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .stats-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   border: 1px solid #f0f0f0;
@@ -249,15 +251,15 @@ export default {
 }
 
 .stats-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
+  margin-right: 12px;
   color: white;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .connection-icon { background: linear-gradient(135deg, #409EFF 0%, #3375B9 100%); }
@@ -266,72 +268,72 @@ export default {
 .import-icon { background: linear-gradient(135deg, #F56C6C 0%, #E55C5C 100%); }
 
 .stats-number {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #303133;
   line-height: 1;
 }
 
 .stats-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #606266;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* 快速操作区域 */
 .quick-actions-section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .quick-actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .quick-actions-panel,
 .recent-queries-panel {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #f0f0f0;
 }
 
 .panel-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .actions-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .action-button {
   justify-content: flex-start;
-  height: 48px;
-  font-size: 14px;
+  height: 40px;
+  font-size: 13px;
 }
 
 .action-icon {
-  margin-right: 8px;
+  margin-right: 6px;
 }
 
 /* 最近查询 */
 .queries-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .query-item {
-  padding: 12px;
+  padding: 10px;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -342,7 +344,7 @@ export default {
 }
 
 .query-text {
-  font-size: 12px;
+  font-size: 11px;
   color: #606266;
   line-height: 1.4;
   overflow: hidden;
@@ -353,7 +355,7 @@ export default {
 }
 
 .query-time {
-  font-size: 11px;
+  font-size: 10px;
   color: #909399;
   margin-top: 4px;
 }
@@ -361,20 +363,20 @@ export default {
 .empty-state {
   text-align: center;
   color: #909399;
-  padding: 40px 0;
+  padding: 24px 0;
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
+  font-size: 36px;
+  margin-bottom: 8px;
   opacity: 0.5;
 }
 
 /* 支持的数据库 */
 .supported-dbs-section {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #f0f0f0;
 }
@@ -382,15 +384,15 @@ export default {
 .dbs-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .db-item {
   display: flex;
   align-items: center;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid #e4e7ed;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
@@ -400,16 +402,16 @@ export default {
 }
 
 .db-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
+  margin-right: 10px;
   color: white;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .neo4j-icon { background: linear-gradient(135deg, #008CC1 0%, #0073A8 100%); }
@@ -420,37 +422,38 @@ export default {
   font-weight: 600;
   color: #303133;
   margin-bottom: 2px;
+  font-size: 13px;
 }
 
 .db-description {
-  font-size: 12px;
+  font-size: 11px;
   color: #909399;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 16px;
+    padding: 12px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .quick-actions-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .dbs-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .tech-gradient {
-    padding: 24px;
+    padding: 16px 20px;
   }
-  
+
   .welcome-title {
-    font-size: 24px;
+    font-size: 20px;
   }
 }
 </style>

@@ -2,7 +2,7 @@
   <el-card class="graph-card" @click="$emit('click', graph)">
     <div class="card-header">
       <div class="icon-wrapper" :class="`icon-${graph.databaseType?.toLowerCase() || 'default'}`">
-        <el-icon :size="32" color="#fff">
+        <el-icon :size="24" color="#fff">
           <Share />
         </el-icon>
       </div>
@@ -134,7 +134,22 @@ const formatTime = (timestamp) => {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #e8e8e8;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.graph-card :deep(.el-card__body) {
+  padding: 12px; /* 减小卡片内部内边距 */
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.graph-card::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .graph-card:hover {
@@ -146,14 +161,15 @@ const formatTime = (timestamp) => {
 .card-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .icon-wrapper {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -187,8 +203,8 @@ const formatTime = (timestamp) => {
 }
 
 .graph-name {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  margin: 0 0 6px 0; /* 减小间距 */
+  font-size: 15px; /* 减小字体大小 */
   font-weight: 600;
   color: #303133;
   overflow: hidden;
@@ -197,14 +213,14 @@ const formatTime = (timestamp) => {
 }
 
 .graph-description {
-  margin: 0 0 8px 0;
-  font-size: 13px;
+  margin: 0 0 6px 0; /* 减小间距 */
+  font-size: 12px; /* 减小字体大小 */
   color: #606266;
-  line-height: 1.5;
+  line-height: 1.4; /* 减小行高 */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1; /* 限制为1行 */
   -webkit-box-orient: vertical;
 }
 
@@ -216,12 +232,12 @@ const formatTime = (timestamp) => {
 }
 
 .database-type {
-  font-size: 12px;
+  font-size: 11px;
   color: #606266;
   font-weight: 500;
-  padding: 2px 8px;
+  padding: 2px 6px;
   background: #f0f2f5;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .graph-tags {
@@ -234,10 +250,11 @@ const formatTime = (timestamp) => {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 16px;
+  padding: 8px 10px;
   background: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .stat-item {
@@ -248,10 +265,10 @@ const formatTime = (timestamp) => {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 20px; /* 减小字体大小 */
   font-weight: 700;
   color: #1890ff;
-  margin-bottom: 4px;
+  margin-bottom: 2px; /* 减小间距 */
 }
 
 .stat-label {
@@ -262,23 +279,24 @@ const formatTime = (timestamp) => {
 .card-meta {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px;
   background: #fafafa;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12px;
   color: #606266;
 }
 
 .meta-icon {
-  font-size: 14px;
+  font-size: 12px;
   color: #909399;
   flex-shrink: 0;
 }
@@ -286,9 +304,13 @@ const formatTime = (timestamp) => {
 .card-footer {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding-top: 16px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
   border-top: 1px solid #f0f0f0;
+  margin-top: auto;
+  flex-shrink: 0;
+  min-height: 54px;
 }
 
 /* 纯图标按钮样式 */
@@ -296,8 +318,8 @@ const formatTime = (timestamp) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 50%;
   font-size: 16px;
@@ -387,7 +409,7 @@ const formatTime = (timestamp) => {
 }
 
 .icon-btn .el-icon {
-  font-size: 18px;
+  font-size: 16px;
   transition: transform 0.2s ease;
 }
 
