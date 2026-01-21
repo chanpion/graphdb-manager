@@ -334,14 +334,23 @@ public class GraphService {
     
     
     public Vertex updateVertex(Long connectionId, String graphName, String uid, Map<String, Object> properties) {
-        // TODO: 实现节点更新逻辑
-        // 目前模拟更新，实际需要调用适配器的更新方法
-        System.out.println("Updating vertex " + uid + " in graph " + graphName);
-        Vertex vertex = new Vertex();
-        vertex.setUid(uid);
-        vertex.setProperties(properties != null ? new HashMap<>(properties) : new HashMap<>());
-        vertex.setUpdatedAt(System.currentTimeMillis());
-        return vertex;
+        ConnectionConfigDTO dto = connectionService.getById(connectionId);
+        ConnectionConfig config = convertDTOToModel(dto);
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        GraphAdapter adapter = getAdapter(type);
+        if (adapter == null) {
+            throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
+        }
+        try {
+            if (!(adapter instanceof DataHandler)) {
+                throw new RuntimeException("适配器 " + type + " 未实现DataHandler接口");
+            }
+            DataHandler dataHandler = (DataHandler) adapter;
+            Map<String, Object> vertexMap = dataHandler.updateVertex(graphName, uid, properties);
+            return convertMapToVertex(vertexMap);
+        } catch (CoreException e) {
+            throw new RuntimeException("更新节点失败: " + e.getMessage(), e);
+        }
     }
     
     
@@ -412,13 +421,23 @@ public class GraphService {
     
     
     public Edge updateEdge(Long connectionId, String graphName, String uid, Map<String, Object> properties) {
-        // TODO: 实现边更新逻辑
-        System.out.println("Updating edge " + uid + " in graph " + graphName);
-        Edge edge = new Edge();
-        edge.setUid(uid);
-        edge.setProperties(properties != null ? new HashMap<>(properties) : new HashMap<>());
-        edge.setUpdatedAt(System.currentTimeMillis());
-        return edge;
+        ConnectionConfigDTO dto = connectionService.getById(connectionId);
+        ConnectionConfig config = convertDTOToModel(dto);
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        GraphAdapter adapter = getAdapter(type);
+        if (adapter == null) {
+            throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
+        }
+        try {
+            if (!(adapter instanceof DataHandler)) {
+                throw new RuntimeException("适配器 " + type + " 未实现DataHandler接口");
+            }
+            DataHandler dataHandler = (DataHandler) adapter;
+            Map<String, Object> edgeMap = dataHandler.updateEdge(graphName, uid, properties);
+            return convertMapToEdge(edgeMap);
+        } catch (CoreException e) {
+            throw new RuntimeException("更新边失败: " + e.getMessage(), e);
+        }
     }
     
     
@@ -444,10 +463,18 @@ public class GraphService {
     
     public Object executeNativeQuery(Long connectionId, String graphName, 
                                     String queryLanguage, String queryStatement) {
-        // TODO: 实现原生查询执行逻辑
-        System.out.println("Executing native query in graph " + graphName + ": " + queryStatement);
-        // 模拟返回空结果
-        return Map.of("result", "query executed", "rows", 0);
+        ConnectionConfigDTO dto = connectionService.getById(connectionId);
+        ConnectionConfig config = convertDTOToModel(dto);
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        GraphAdapter adapter = getAdapter(type);
+        if (adapter == null) {
+            throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
+        }
+        try {
+            return adapter.executeNativeQuery(config, graphName, queryLanguage, queryStatement);
+        } catch (CoreException e) {
+            throw new RuntimeException("执行原生查询失败: " + e.getMessage(), e);
+        }
     }
     
     

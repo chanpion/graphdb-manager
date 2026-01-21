@@ -30,11 +30,11 @@ public class ConnectionController {
     @Operation(summary = "获取连接列表", description = "查询所有图数据库连接信息")
     @GetMapping
     public Result<List<ConnectionConfigDTO>> list(
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer page,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "数据库类型筛选") @RequestParam(required = false) String databaseType,
-            @Parameter(description = "状态筛选") @RequestParam(required = false) Integer status,
-            @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword) {
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "数据库类型筛选") @RequestParam(required = false, name = "databaseType") String databaseType,
+            @Parameter(description = "状态筛选") @RequestParam(required = false, name = "status") Integer status,
+            @Parameter(description = "关键词搜索") @RequestParam(required = false, name = "keyword") String keyword) {
         try {
             return Result.success(connectionService.list());
         } catch (Exception e) {

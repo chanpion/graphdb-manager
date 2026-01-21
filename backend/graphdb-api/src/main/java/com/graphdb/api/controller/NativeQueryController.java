@@ -90,10 +90,10 @@ public class NativeQueryController {
     public Result<Map<String, Object>> getQueryHistory(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer page,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "开始时间") @RequestParam(required = false) Long startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) Long endTime) {
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "开始时间") @RequestParam(required = false, name = "startTime") Long startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false, name = "endTime") Long endTime) {
         try {
             Map<String, Object> history = nativeQueryService.getQueryHistory(
                     connectionId, graphName, page, pageSize, startTime, endTime);
@@ -174,9 +174,9 @@ public class NativeQueryController {
     public Result<Map<String, Object>> getQueryScripts(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer page,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword) {
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "关键词搜索") @RequestParam(required = false, name = "keyword") String keyword) {
         try {
             Map<String, Object> scripts = nativeQueryService.getQueryScripts(
                     connectionId, graphName, page, pageSize, keyword);

@@ -92,4 +92,9 @@ public class ConnectionConfig {
      * 创建人
      */
     private String createdBy;
+
+    /**
+     * 数据库名称
+     */
+    private String databaseName;
 }

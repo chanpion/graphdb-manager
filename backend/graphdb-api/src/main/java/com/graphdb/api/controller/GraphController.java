@@ -32,10 +32,10 @@ public class GraphController {
     @GetMapping
     public Result<List<GraphInstanceEntity>> list(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer page,
-            @Parameter(name = "pageSize", description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "状态筛选") @RequestParam(required = false) Integer status,
-            @Parameter(description = "图来源筛选: PLATFORM-平台创建, EXISTING-图数据库已有") @RequestParam(required = false) String sourceType) {
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
+            @Parameter(name = "pageSize", description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "状态筛选") @RequestParam(required = false, name = "status") Integer status,
+            @Parameter(description = "图来源筛选: PLATFORM-平台创建, EXISTING-图数据库已有") @RequestParam(required = false, name = "sourceType") String sourceType) {
         try {
             List<GraphInstanceEntity> graphs = graphService.getGraphInstances(connectionId, sourceType);
             return Result.success(graphs);

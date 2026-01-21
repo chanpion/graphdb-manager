@@ -629,4 +629,129 @@ public class JanusAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             throw new CoreException("CSV导入失败: " + e.getMessage(), e);
         }
     }
+    
+    // ========== 新增方法实现 ==========
+    
+    @Override
+    public Map<String, Object> updateVertex(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("JanusGraph连接未建立");
+        }
+        
+        try {
+            org.janusgraph.core.JanusGraphTransaction tx = graph.newTransaction();
+            
+            // 查找要更新的节点
+            org.apache.tinkerpop.gremlin.structure.Vertex vertex = tx.traversal().V().has("uid", uid).next();
+            
+            // 更新属性
+            if (properties != null) {
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    vertex.property(entry.getKey(), entry.getValue());
+                }
+            }
+            
+            tx.commit();
+            
+            // 构建返回的更新后节点数据
+            Map<String, Object> vertexData = new HashMap<>();
+            vertexData.put("uid", uid);
+            vertexData.put("label", vertex.label());
+            vertexData.put("properties", properties != null ? properties : new HashMap<>());
+            
+            return vertexData;
+        } catch (Exception e) {
+            throw new CoreException("更新JanusGraph节点失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Map<String, Object> updateEdge(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("JanusGraph连接未建立");
+        }
+        
+        try {
+            org.janusgraph.core.JanusGraphTransaction tx = graph.newTransaction();
+            
+            // 查找要更新的边
+            org.apache.tinkerpop.gremlin.structure.Edge edge = tx.traversal().E().has("uid", uid).next();
+            
+            // 更新属性
+            if (properties != null) {
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    edge.property(entry.getKey(), entry.getValue());
+                }
+            }
+            
+            tx.commit();
+            
+            // 构建返回的更新后边数据
+            Map<String, Object> edgeData = new HashMap<>();
+            edgeData.put("uid", uid);
+            edgeData.put("label", edge.label());
+            edgeData.put("sourceUid", edge.outVertex().property("uid").orElse("unknown"));
+            edgeData.put("targetUid", edge.inVertex().property("uid").orElse("unknown"));
+            edgeData.put("properties", properties != null ? properties : new HashMap<>());
+            
+            return edgeData;
+        } catch (Exception e) {
+            throw new CoreException("更新JanusGraph边失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Object executeNativeQuery(ConnectionConfig config, String graphName, 
+                                    String queryLanguage, String queryStatement) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+        
+        try {
+            // 验证查询语言
+            if (!"Gremlin".equalsIgnoreCase(queryLanguage)) {
+                throw new CoreException("JanusGraph只支持Gremlin查询语言");
+            }
+            
+            org.janusgraph.core.JanusGraphTransaction tx = graph.newTransaction();
+            
+            // 执行Gremlin查询
+            Object result = tx.traversal().gremlin(queryStatement).next();
+            
+            // 处理查询结果
+            List<Map<String, Object>> rows = new ArrayList<>();
+            
+            // 简化处理，实际需要更复杂的类型检查和转换
+            if (result instanceof org.apache.tinkerpop.gremlin.structure.Vertex) {
+                org.apache.tinkerpop.gremlin.structure.Vertex vertex = (org.apache.tinkerpop.gremlin.structure.Vertex) result;
+                Map<String, Object> row = new HashMap<>();
+                row.put("vertex_id", vertex.id());
+                row.put("vertex_label", vertex.label());
+                rows.add(row);
+            } else if (result instanceof org.apache.tinkerpop.gremlin.structure.Edge) {
+                org.apache.tinkerpop.gremlin.structure.Edge edge = (org.apache.tinkerpop.gremlin.structure.Edge) result;
+                Map<String, Object> row = new HashMap<>();
+                row.put("edge_id", edge.id());
+                row.put("edge_label", edge.label());
+                rows.add(row);
+            } else {
+                // 处理其他类型的查询结果
+                Map<String, Object> row = new HashMap<>();
+                row.put("result", result);
+                rows.add(row);
+            }
+            
+            tx.rollback(); // 只读事务，回滚
+            
+            Map<String, Object> queryResult = new HashMap<>();
+            queryResult.put("success", true);
+            queryResult.put("rows", rows);
+            queryResult.put("rowCount", rows.size());
+            queryResult.put("queryLanguage", "Gremlin");
+            
+            return queryResult;
+        } catch (Exception e) {
+            throw new CoreException("执行JanusGraph原生查询失败: " + e.getMessage(), e);
+        }
+    }
 }

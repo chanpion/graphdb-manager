@@ -80,4 +80,24 @@ public interface DataHandler {
      * @throws CoreException 导入异常
      */
     String importFromCsv(String graphName, CsvImportConfig config, InputStream csvStream);
+    
+    /**
+     * 更新节点
+     * @param graphName 图名称
+     * @param uid 节点UID
+     * @param properties 更新后的属性集合
+     * @return 更新后的节点信息
+     * @throws CoreException 更新异常
+     */
+    Map<String, Object> updateVertex(String graphName, String uid, Map<String, Object> properties);
+    
+    /**
+     * 更新边
+     * @param graphName 图名称
+     * @param uid 边UID
+     * @param properties 更新后的属性集合
+     * @return 更新后的边信息
+     * @throws CoreException 更新异常
+     */
+    Map<String, Object> updateEdge(String graphName, String uid, Map<String, Object> properties);
 }

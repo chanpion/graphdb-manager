@@ -648,4 +648,156 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             throw new CoreException("删除Nebula节点类型失败: " + e.getMessage(), e);
         }
     }
+    
+    // ========== 新增方法实现 ==========
+    
+    @Override
+    public Map<String, Object> updateVertex(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("NebulaGraph连接未建立");
+        }
+        
+        try {
+            // 构建更新节点的nGQL查询
+            StringBuilder queryBuilder = new StringBuilder("UPDATE VERTEX \"" + uid + "\" SET ");
+            
+            if (properties != null && !properties.isEmpty()) {
+                boolean first = true;
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    if (!first) queryBuilder.append(", ");
+                    queryBuilder.append(entry.getKey()).append(" = ").append(formatValue(entry.getValue()));
+                    first = false;
+                }
+            }
+            queryBuilder.append(";");
+            
+            ResultSet result = session.execute(queryBuilder.toString());
+            if (!result.isSucceeded()) {
+                throw new CoreException("更新节点失败: " + result.getErrorMessage());
+            }
+            
+            // 构建返回的更新后节点数据
+            Map<String, Object> vertex = new HashMap<>();
+            vertex.put("uid", uid);
+            vertex.put("properties", properties != null ? properties : new HashMap<>());
+            
+            return vertex;
+        } catch (Exception e) {
+            throw new CoreException("更新Nebula节点失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Map<String, Object> updateEdge(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("NebulaGraph连接未建立");
+        }
+        
+        try {
+            // NebulaGraph边更新需要先查询边信息，这里简化实现
+            // 实际实现中需要更复杂的逻辑
+            StringBuilder queryBuilder = new StringBuilder("UPDATE EDGE SET ");
+            
+            if (properties != null && !properties.isEmpty()) {
+                boolean first = true;
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    if (!first) queryBuilder.append(", ");
+                    queryBuilder.append(entry.getKey()).append(" = ").append(formatValue(entry.getValue()));
+                    first = false;
+                }
+            }
+            
+            // 简化的查询，实际需要更精确的边定位
+            queryBuilder.append(" WHERE src() == \"" + uid + "\";");
+            
+            ResultSet result = session.execute(queryBuilder.toString());
+            if (!result.isSucceeded()) {
+                throw new CoreException("更新边失败: " + result.getErrorMessage());
+            }
+            
+            // 构建返回的更新后边数据
+            Map<String, Object> edge = new HashMap<>();
+            edge.put("uid", uid);
+            edge.put("properties", properties != null ? properties : new HashMap<>());
+            
+            return edge;
+        } catch (Exception e) {
+            throw new CoreException("更新Nebula边失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Object executeNativeQuery(ConnectionConfig config, String graphName, 
+                                    String queryLanguage, String queryStatement) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+        
+        try {
+            // 验证查询语言
+            if (!"nGQL".equalsIgnoreCase(queryLanguage) && !"GQL".equalsIgnoreCase(queryLanguage)) {
+                throw new CoreException("NebulaGraph只支持nGQL/GQL查询语言");
+            }
+            
+            // 切换到指定图空间
+            if (graphName != null && !graphName.isEmpty()) {
+                session.execute("USE `" + graphName + "`");
+                currentGraph = graphName;
+            }
+            
+            // 执行原生查询
+            ResultSet result = session.execute(queryStatement);
+            
+            // 处理查询结果
+            List<Map<String, Object>> rows = new ArrayList<>();
+            if (result.isSucceeded()) {
+                // 获取列名
+                List<String> columnNames = result.getColumnNames();
+                
+                for (int i = 0; i < result.rowsSize(); i++) {
+                    Map<String, Object> row = new HashMap<>();
+                    List<ValueWrapper> rowValues = result.rowValues(i).values(); // 获取一行的所有列值
+                    for (int j = 0; j < rowValues.size(); j++) {
+                        String columnName = j < columnNames.size() ? columnNames.get(j) : "col_" + j; // 使用真实的列名，如果获取不到则使用默认名称
+                        ValueWrapper value = rowValues.get(j);
+                        
+                        try {
+                            if (value.isString()) {
+                                row.put(columnName, value.asString());
+                            } else if (value.isLong()) {
+                                row.put(columnName, value.asLong());
+                            } else if (value.isDouble()) {
+                                row.put(columnName, value.asDouble());
+                            } else if (value.isBoolean()) {
+                                row.put(columnName, value.asBoolean());
+                            } else if (value.isVertex()) {
+                                row.put(columnName, value.asNode().toString());
+                            } else if (value.isEdge()) {
+                                row.put(columnName, value.asRelationship().toString());
+                            } else if (value.isPath()) {
+                                row.put(columnName, value.asPath().toString());
+                            } else {
+                                row.put(columnName, value.toString());
+                            }
+                        } catch (Exception e) {
+                            // 如果类型转换失败，使用字符串形式
+                            row.put(columnName, value.toString());
+                        }
+                    }
+                    rows.add(row);
+                }
+            }
+            
+            Map<String, Object> queryResult = new HashMap<>();
+            queryResult.put("success", result.isSucceeded());
+            queryResult.put("rows", rows);
+            queryResult.put("rowCount", rows.size());
+            queryResult.put("errorMessage", result.isSucceeded() ? null : result.getErrorMessage());
+            queryResult.put("queryLanguage", "nGQL");
+            
+            return queryResult;
+        } catch (Exception e) {
+            throw new CoreException("执行NebulaGraph原生查询失败: " + e.getMessage(), e);
+        }
+    }
 }

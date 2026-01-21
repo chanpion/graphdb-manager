@@ -55,12 +55,12 @@ public class DataOperationController {
     public Result<List<Vertex>> queryVertices(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "节点类型筛选") @RequestParam(required = false) String label,
-            @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer pageNum,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "排序字段") @RequestParam(required = false) String sortBy,
-            @Parameter(description = "排序方向", example = "DESC") @RequestParam(required = false) String sortOrder) {
+            @Parameter(description = "节点类型筛选") @RequestParam(required = false, name = "label") String label,
+            @Parameter(description = "关键词搜索") @RequestParam(required = false, name = "keyword") String keyword,
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "pageNum") Integer pageNum,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "排序字段") @RequestParam(required = false, name = "sortBy") String sortBy,
+            @Parameter(description = "排序方向", example = "DESC") @RequestParam(required = false, name = "sortOrder") String sortOrder) {
         try {
             QueryCondition condition = new QueryCondition();
             condition.setLabel(label);
@@ -188,14 +188,14 @@ public class DataOperationController {
     public Result<List<Edge>> queryEdges(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "边类型筛选") @RequestParam(required = false) String label,
-            @Parameter(description = "起始节点UID") @RequestParam(required = false) String sourceUid,
-            @Parameter(description = "目标节点UID") @RequestParam(required = false) String targetUid,
-            @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer pageNum,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "排序字段") @RequestParam(required = false) String sortBy,
-            @Parameter(description = "排序方向", example = "DESC") @RequestParam(required = false) String sortOrder) {
+            @Parameter(description = "边类型筛选") @RequestParam(required = false, name = "label") String label,
+            @Parameter(description = "起始节点UID") @RequestParam(required = false, name = "sourceUid") String sourceUid,
+            @Parameter(description = "目标节点UID") @RequestParam(required = false, name = "targetUid") String targetUid,
+            @Parameter(description = "关键词搜索") @RequestParam(required = false, name = "keyword") String keyword,
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "pageNum") Integer pageNum,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "排序字段") @RequestParam(required = false, name = "sortBy") String sortBy,
+            @Parameter(description = "排序方向", example = "DESC") @RequestParam(required = false, name = "sortOrder") String sortOrder) {
         try {
             QueryCondition condition = new QueryCondition();
             condition.setLabel(label);

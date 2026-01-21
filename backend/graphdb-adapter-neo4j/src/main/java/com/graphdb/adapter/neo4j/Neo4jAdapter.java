@@ -2,6 +2,7 @@ package com.graphdb.adapter.neo4j;
 
 import com.graphdb.core.interfaces.GraphAdapter;
 import com.graphdb.core.interfaces.DataHandler;
+import com.graphdb.core.interfaces.SchemaHandler;
 import com.graphdb.core.constant.DatabaseTypeEnum;
 import com.graphdb.core.model.ConnectionConfig;
 import com.graphdb.core.model.GraphSchema;
@@ -31,7 +32,7 @@ import java.util.stream.StreamSupport;
  * Neo4j适配器实现
  */
 @Component
-public class Neo4jAdapter implements GraphAdapter, DataHandler {
+public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
     
     private Driver driver;
     private Session session;
@@ -159,12 +160,35 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         }
         
         try {
-            // Neo4j 5.x+ 支持多数据库
-            String createDbQuery = "CREATE DATABASE $name IF NOT EXISTS";
-            session.run(createDbQuery, Values.parameters("name", graphName));
-            System.out.println("创建Neo4j数据库: " + graphName);
+            // Neo4j 企业版支持多数据库，社区版只有一个默认数据库
+            // 检查数据库是否存在
+            String checkDbQuery = "SHOW DATABASES";
+            Result result = session.run(checkDbQuery);
+            
+            boolean exists = false;
+            for (Record record : result.list()) {
+                if (record.get("name").asString().equals(graphName)) {
+                    exists = true;
+                    break;
+                }
+            }
+            
+            if (!exists) {
+                // 如果数据库不存在，则尝试创建（仅企业版支持）
+                try {
+                    String createDbQuery = "CREATE DATABASE $name";
+                    session.run(createDbQuery, Values.parameters("name", graphName));
+                    System.out.println("创建Neo4j数据库: " + graphName);
+                } catch (Exception e) {
+                    // 社区版不支持多数据库，记录警告信息
+                    System.out.println("Neo4j社区版不支持多数据库，使用默认数据库: " + graphName);
+                }
+            } else {
+                System.out.println("Neo4j数据库已存在: " + graphName);
+            }
         } catch (Exception e) {
-            throw new CoreException("创建Neo4j图失败: " + e.getMessage(), e);
+            // 如果 SHOW DATABASES 命令不可用，可能是较老版本
+            System.out.println("使用Neo4j默认数据库: " + graphName);
         }
     }
     
@@ -175,12 +199,31 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         }
         
         try {
-            // Neo4j 5.x+ 支持多数据库
-            String dropDbQuery = "DROP DATABASE $name IF EXISTS";
-            session.run(dropDbQuery, Values.parameters("name", graphName));
-            System.out.println("删除Neo4j数据库: " + graphName);
+            // 检查数据库是否存在
+            String checkDbQuery = "SHOW DATABASES";
+            Result result = session.run(checkDbQuery);
+            
+            boolean exists = false;
+            for (Record record : result.list()) {
+                if (record.get("name").asString().equals(graphName)) {
+                    exists = true;
+                    break;
+                }
+            }
+            
+            if (exists && !"neo4j".equals(graphName) && !"system".equals(graphName)) {
+                // 只删除自定义数据库，不删除系统数据库
+                String dropDbQuery = "DROP DATABASE $name";
+                session.run(dropDbQuery, Values.parameters("name", graphName));
+                System.out.println("删除Neo4j数据库: " + graphName);
+            } else if ("neo4j".equals(graphName) || "system".equals(graphName)) {
+                System.out.println("不能删除系统数据库: " + graphName);
+            } else {
+                System.out.println("Neo4j数据库不存在: " + graphName);
+            }
         } catch (Exception e) {
-            throw new CoreException("删除Neo4j图失败: " + e.getMessage(), e);
+            // 如果 SHOW DATABASES 命令不可用或为社区版，提示相关信息
+            System.out.println("Neo4j社区版不支持多数据库操作: " + e.getMessage());
         }
     }
     
@@ -191,11 +234,20 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         }
         
         try {
-            // Neo4j中节点标签是隐式创建的，只需创建带有该标签的节点即可
-            String createNodeQuery = "CREATE (n:$label {name: $labelName})";
-            session.run(createNodeQuery, Values.parameters("label", labelType.getName(), "labelName", labelType.getName()));
-            session.run("MATCH (n) WHERE n.name = $labelName DELETE n", Values.parameters("labelName", labelType.getName()));
-            System.out.println("创建Neo4j节点类型: " + labelType.getName());
+            // Neo4j中节点标签是隐式创建的，只需执行一个简单查询来确认可以使用该标签
+            String testQuery = "CALL db.labels() YIELD label WHERE label = $labelName RETURN label LIMIT 1";
+            Result result = session.run(testQuery, Values.parameters("labelName", labelType.getName()));
+            
+            if (result.list().isEmpty()) {
+                // 如果标签不存在，可以通过创建和删除一个临时节点来"注册"该标签
+                String tempCreateQuery = "CREATE (temp:$labelName {temp: true}) RETURN temp";
+                session.run(tempCreateQuery, Values.parameters("labelName", labelType.getName()));
+                
+                String tempDeleteQuery = "MATCH (temp:$labelName {temp: true}) DELETE temp";
+                session.run(tempDeleteQuery, Values.parameters("labelName", labelType.getName()));
+            }
+            
+            System.out.println("确认Neo4j节点类型: " + labelType.getName());
         } catch (Exception e) {
             throw new CoreException("创建Neo4j点类型失败: " + e.getMessage(), e);
         }
@@ -224,11 +276,20 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         }
         
         try {
-            // Neo4j中关系类型是隐式创建的，只需创建带有该类型的关系即可
-            String createEdgeQuery = "CREATE (a:TestNode)-[r:$type {name: $typeName}]->(b:TestNode)";
-            session.run(createEdgeQuery, Values.parameters("type", labelType.getName(), "typeName", labelType.getName()));
-            session.run("MATCH (a:TestNode)-[r]->(b:TestNode) DELETE a, r, b");
-            System.out.println("创建Neo4j边类型: " + labelType.getName());
+            // Neo4j中关系类型是隐式创建的，只需执行一个简单查询来确认可以使用该类型
+            String testQuery = "CALL db.relationshipTypes() YIELD relationshipType WHERE relationshipType = $relTypeName RETURN relationshipType LIMIT 1";
+            Result result = session.run(testQuery, Values.parameters("relTypeName", labelType.getName()));
+            
+            if (result.list().isEmpty()) {
+                // 如果关系类型不存在，可以通过创建和删除一个临时关系来"注册"该类型
+                String tempCreateQuery = "CREATE (a:TempNode1)-[temp:$relType {temp: true}]->(b:TempNode2) RETURN temp";
+                session.run(tempCreateQuery, Values.parameters("relType", labelType.getName()));
+                
+                String tempDeleteQuery = "MATCH (a:TempNode1)-[temp:$relType {temp: true}]->(b:TempNode2) DELETE a, temp, b";
+                session.run(tempDeleteQuery, Values.parameters("relType", labelType.getName()));
+            }
+            
+            System.out.println("确认Neo4j边类型: " + labelType.getName());
         } catch (Exception e) {
             throw new CoreException("创建Neo4j边类型失败: " + e.getMessage(), e);
         }
@@ -440,9 +501,9 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         try {
             String query;
             if (label != null && !label.isEmpty()) {
-                query = "MATCH (n:" + label + ") RETURN n";
+                query = "MATCH (n:" + label + ") RETURN n, elementId(n) as id";
             } else {
-                query = "MATCH (n) RETURN n";
+                query = "MATCH (n) RETURN n, elementId(n) as id";
             }
             
             Result result = session.run(query);
@@ -450,15 +511,24 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
             
             for (Record record : result.list()) {
                 Node node = record.get("n").asNode();
+                String elementId = record.get("id").asString(); // 使用elementId作为唯一标识
+                
                 Map<String, Object> vertex = new HashMap<>();
                 
                 // 获取节点标签
                 List<String> labels = StreamSupport.stream(node.labels().spliterator(), false).collect(Collectors.toList());
                 String primaryLabel = labels.isEmpty() ? "Unknown" : labels.get(0);
                 
-                vertex.put("uid", node.get("uid").asString());
+                // 使用elementId作为uid，这是Neo4j中更可靠的唯一标识
+                vertex.put("uid", elementId);
                 vertex.put("label", primaryLabel);
-                vertex.put("properties", node.asMap());
+                
+                // 提取属性
+                Map<String, Object> properties = new HashMap<>();
+                for (String key : node.keys()) {
+                    properties.put(key, node.get(key).asObject());
+                }
+                vertex.put("properties", properties);
                 
                 vertices.add(vertex);
             }
@@ -478,9 +548,9 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
         try {
             String query;
             if (label != null && !label.isEmpty()) {
-                query = "MATCH ()-[r:" + label + "]->() RETURN r, startNode(r) as source, endNode(r) as target";
+                query = "MATCH ()-[r:" + label + "]->() RETURN r, elementId(r) as id, startNode(r) as source, endNode(r) as target";
             } else {
-                query = "MATCH ()-[r]->() RETURN r, startNode(r) as source, endNode(r) as target";
+                query = "MATCH ()-[r]->() RETURN r, elementId(r) as id, startNode(r) as source, endNode(r) as target";
             }
             
             Result result = session.run(query);
@@ -488,15 +558,22 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
             
             for (Record record : result.list()) {
                 Relationship relationship = record.get("r").asRelationship();
+                String elementId = record.get("id").asString(); // 使用elementId作为唯一标识
                 Node source = record.get("source").asNode();
                 Node target = record.get("target").asNode();
                 
                 Map<String, Object> edge = new HashMap<>();
-                edge.put("uid", relationship.get("uid").asString());
+                edge.put("uid", elementId); // 使用elementId作为uid
                 edge.put("label", relationship.type());
-                edge.put("sourceUid", source.get("uid").asString());
-                edge.put("targetUid", target.get("uid").asString());
-                edge.put("properties", relationship.asMap());
+                edge.put("sourceUid", source.elementId()); // 使用elementId
+                edge.put("targetUid", target.elementId()); // 使用elementId
+                
+                // 提取属性
+                Map<String, Object> properties = new HashMap<>();
+                for (String key : relationship.keys()) {
+                    properties.put(key, relationship.get(key).asObject());
+                }
+                edge.put("properties", properties);
                 
                 edges.add(edge);
             }
@@ -529,6 +606,243 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler {
             }
         } catch (Exception e) {
             throw new CoreException("CSV导入失败: " + e.getMessage(), e);
+        }
+    }
+    
+    // ========== SchemaHandler 接口实现 ==========
+    
+    @Override
+    public Map<String, Map<String, Object>> getNodeTypes(String graphName) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            Map<String, Map<String, Object>> nodeTypes = new HashMap<>();
+            
+            // 获取所有节点标签
+            String query = "CALL db.labels() YIELD label RETURN label";
+            Result result = session.run(query);
+            
+            for (Record record : result.list()) {
+                String label = record.get("label").asString();
+                nodeTypes.put(label, new HashMap<>());
+            }
+            
+            return nodeTypes;
+        } catch (Exception e) {
+            throw new CoreException("获取Neo4j节点类型失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Map<String, Map<String, Object>> getEdgeTypes(String graphName) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            Map<String, Map<String, Object>> edgeTypes = new HashMap<>();
+            
+            // 获取所有关系类型
+            String query = "CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType";
+            Result result = session.run(query);
+            
+            for (Record record : result.list()) {
+                String relType = record.get("relationshipType").asString();
+                edgeTypes.put(relType, new HashMap<>());
+            }
+            
+            return edgeTypes;
+        } catch (Exception e) {
+            throw new CoreException("获取Neo4j边类型失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public void createNodeType(String graphName, String typeName, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            // Neo4j中节点标签是隐式创建的，只需执行一个简单查询来确认可以使用该标签
+            String testQuery = "CALL db.labels() YIELD label WHERE label = $typeName RETURN label LIMIT 1";
+            Result result = session.run(testQuery, Values.parameters("typeName", typeName));
+            
+            if (result.list().isEmpty()) {
+                // 如果标签不存在，可以通过创建和删除一个临时节点来"注册"该标签
+                String tempCreateQuery = "CREATE (temp:$typeName {temp: true}) RETURN temp";
+                session.run(tempCreateQuery, Values.parameters("typeName", typeName));
+                
+                String tempDeleteQuery = "MATCH (temp:$typeName {temp: true}) DELETE temp";
+                session.run(tempDeleteQuery, Values.parameters("typeName", typeName));
+            }
+            
+            System.out.println("确认Neo4j节点类型: " + typeName);
+        } catch (Exception e) {
+            throw new CoreException("创建Neo4j节点类型失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public void deleteNodeType(String graphName, String typeName) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            // 删除所有带有该标签的节点
+            String deleteNodesQuery = "MATCH (n:$" + typeName + ") DELETE n";
+            session.run(deleteNodesQuery);
+            
+            System.out.println("删除Neo4j节点类型: " + typeName);
+        } catch (Exception e) {
+            throw new CoreException("删除Neo4j节点类型失败: " + e.getMessage(), e);
+        }
+    }
+    
+    // ========== 新增方法实现 ==========
+    
+    @Override
+    public Map<String, Object> updateVertex(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            // 构建更新节点的Cypher查询
+            StringBuilder queryBuilder = new StringBuilder("MATCH (n {uid: $uid}) SET ");
+            
+            if (properties != null && !properties.isEmpty()) {
+                int i = 0;
+                for (String key : properties.keySet()) {
+                    if (i > 0) {
+                        queryBuilder.append(", ");
+                    }
+                    queryBuilder.append("n.").append(key).append(" = $prop_").append(key);
+                    i++;
+                }
+            }
+            
+            queryBuilder.append(" RETURN n");
+            
+            // 构建参数
+            Map<String, Object> params = new HashMap<>();
+            params.put("uid", uid);
+            if (properties != null) {
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    params.put("prop_" + entry.getKey(), entry.getValue());
+                }
+            }
+            
+            Result result = session.run(queryBuilder.toString(), params);
+            Record record = result.single();
+            Node node = record.get("n").asNode();
+            
+            // 构建返回的更新后节点数据
+            Map<String, Object> vertex = new HashMap<>();
+            vertex.put("uid", uid);
+            
+            // 获取节点标签
+            List<String> labels = StreamSupport.stream(node.labels().spliterator(), false).collect(Collectors.toList());
+            String primaryLabel = labels.isEmpty() ? "Unknown" : labels.get(0);
+            vertex.put("label", primaryLabel);
+            vertex.put("properties", node.asMap());
+            
+            return vertex;
+        } catch (Exception e) {
+            throw new CoreException("更新Neo4j节点失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Map<String, Object> updateEdge(String graphName, String uid, Map<String, Object> properties) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j连接未建立");
+        }
+        
+        try {
+            // 构建更新边的Cypher查询
+            StringBuilder queryBuilder = new StringBuilder("MATCH ()-[r {uid: $uid}]->() SET ");
+            
+            if (properties != null && !properties.isEmpty()) {
+                int i = 0;
+                for (String key : properties.keySet()) {
+                    if (i > 0) {
+                        queryBuilder.append(", ");
+                    }
+                    queryBuilder.append("r.").append(key).append(" = $prop_").append(key);
+                    i++;
+                }
+            }
+            
+            queryBuilder.append(" RETURN r, startNode(r) as source, endNode(r) as target");
+            
+            // 构建参数
+            Map<String, Object> params = new HashMap<>();
+            params.put("uid", uid);
+            if (properties != null) {
+                for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                    params.put("prop_" + entry.getKey(), entry.getValue());
+                }
+            }
+            
+            Result result = session.run(queryBuilder.toString(), params);
+            Record record = result.single();
+            Relationship relationship = record.get("r").asRelationship();
+            Node source = record.get("source").asNode();
+            Node target = record.get("target").asNode();
+            
+            // 构建返回的更新后边数据
+            Map<String, Object> edge = new HashMap<>();
+            edge.put("uid", uid);
+            edge.put("label", relationship.type());
+            edge.put("sourceUid", source.get("uid").asString());
+            edge.put("targetUid", target.get("uid").asString());
+            edge.put("properties", relationship.asMap());
+            
+            return edge;
+        } catch (Exception e) {
+            throw new CoreException("更新Neo4j边失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public Object executeNativeQuery(ConnectionConfig config, String graphName, 
+                                    String queryLanguage, String queryStatement) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+        
+        try {
+            // 验证查询语言
+            if (!"Cypher".equalsIgnoreCase(queryLanguage)) {
+                throw new CoreException("Neo4j只支持Cypher查询语言");
+            }
+            
+            // 执行原生查询
+            Result result = session.run(queryStatement);
+            
+            // 处理查询结果
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Record record : result.list()) {
+                Map<String, Object> row = new HashMap<>();
+                for (String key : record.keys()) {
+                    row.put(key, record.get(key).asObject());
+                }
+                rows.add(row);
+            }
+            
+            Map<String, Object> queryResult = new HashMap<>();
+            queryResult.put("success", true);
+            queryResult.put("rows", rows);
+            queryResult.put("rowCount", rows.size());
+            queryResult.put("queryLanguage", "Cypher");
+            
+            return queryResult;
+        } catch (Exception e) {
+            throw new CoreException("执行Neo4j原生查询失败: " + e.getMessage(), e);
         }
     }
 }

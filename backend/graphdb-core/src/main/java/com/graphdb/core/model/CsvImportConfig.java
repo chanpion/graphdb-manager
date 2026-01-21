@@ -2,6 +2,8 @@ package com.graphdb.core.model;
 
 import lombok.Data;
 
+import java.util.Map;
+
 /**
  * CSV导入配置
  */

@@ -12,7 +12,7 @@ fi
 
 # 编译项目
 echo "编译项目..."
-cd /Users/chenpp/CodeBuddy/20260109115616/graphdb-manager/backend
+cd "$(dirname "$0")"
 mvn clean compile
 
 if [ $? -ne 0 ]; then
@@ -22,7 +22,7 @@ fi
 
 # 启动应用
 echo "启动应用..."
-cd /Users/chenpp/CodeBuddy/20260109115616/graphdb-manager/backend/graphdb-api
+cd graphdb-api
 mvn spring-boot:run
 
 echo "后端服务已启动，访问地址: http://localhost:8080"

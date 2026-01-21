@@ -131,4 +131,16 @@ public interface GraphAdapter {
      * @throws CoreException 操作异常
      */
     List<LabelType> getEdgeTypes(ConnectionConfig config, String graphName) throws CoreException;
+    
+    /**
+     * 执行原生查询
+     * @param config 连接配置
+     * @param graphName 图名称
+     * @param queryLanguage 查询语言（如Cypher, Gremlin, nGQL）
+     * @param queryStatement 查询语句
+     * @return 查询结果
+     * @throws CoreException 查询异常
+     */
+    Object executeNativeQuery(ConnectionConfig config, String graphName, 
+                             String queryLanguage, String queryStatement) throws CoreException;
 }
