@@ -202,8 +202,11 @@ const emit = defineEmits(['toggle'])
   border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding-left: 12px !important;
+  padding-right: 0 !important;
   transition: all 0.2s ease;
+  justify-content: flex-start;
 }
 
 .nav-menu .el-menu-item:hover {

@@ -10,8 +10,6 @@
         <h4 class="connection-name">{{ connection.name }}</h4>
         <div class="connection-meta">
           <el-tag size="small" :type="tagType">{{ dbTypeLabel }}</el-tag>
-          <span class="separator">|</span>
-          <span class="connection-host">{{ connection.host }}:{{ connection.port }}</span>
         </div>
       </div>
     </div>
@@ -21,6 +19,10 @@
         <el-icon class="info-icon"><User /></el-icon>
         <span>{{ connection.username || '未设置' }}</span>
       </div>
+      <div class="info-row host-info">
+        <el-icon class="info-icon"><Connection /></el-icon>
+        <span>{{ connection.host }}:{{ connection.port }}</span>
+      </div>
       <div v-if="connection.description" class="info-row description">
         <el-icon class="info-icon"><Document /></el-icon>
         <span>{{ connection.description }}</span>
@@ -29,7 +31,7 @@
 
     <div class="card-footer">
       <div class="status-indicator">
-        <span class="status-dot" :class="statusClass"></span>
+        <span class="status-dot" :class="statusClass" :style="{ backgroundColor: statusColor }"></span>
         <span class="status-text">{{ statusText }}</span>
       </div>
       <div class="action-buttons">
@@ -123,6 +125,11 @@ const statusText = computed(() => {
   return props.connection.status === 1 ? '正常' : '异常'
 })
 
+// 添加状态颜色计算
+const statusColor = computed(() => {
+  return props.connection.status === 1 ? '#52c41a' : '#ff4d4f'
+})
+
 const handleTest = () => {
   emit('test', props.connection)
 }
@@ -208,6 +215,12 @@ const handleDelete = () => {
   flex-wrap: wrap;
 }
 
+.connection-host-line {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+}
+
 .separator {
   color: #dcdfe6;
 }
@@ -240,6 +253,10 @@ const handleDelete = () => {
   font-style: italic;
 }
 
+.info-row.host-info {
+  color: #606266;
+}
+
 .info-icon {
   font-size: 14px;
   color: #909399;
@@ -252,6 +269,7 @@ const handleDelete = () => {
   align-items: center;
   padding-top: 12px;
   border-top: 1px solid #f0f0f0;
+  min-height: 40px;
 }
 
 .status-indicator {
@@ -260,6 +278,8 @@ const handleDelete = () => {
   gap: 6px;
   font-size: 13px;
   color: #909399;
+  height: 28px;
+  line-height: 28px;
 }
 
 .status-dot {

@@ -95,13 +95,14 @@
           <marker
             id="arrow"
             viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
+            refX="10"
+            refY="3"
             markerWidth="6"
             markerHeight="6"
             orient="auto"
+            markerUnits="strokeWidth"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
+            <path d="M 0 0 L 10 3 L 0 6 z" fill="#666" />
           </marker>
           
           <!-- 双向箭头标记 -->
@@ -109,12 +110,13 @@
             id="arrow-bidirectional"
             viewBox="0 0 10 10"
             refX="5"
-            refY="5"
+            refY="3"
             markerWidth="6"
             markerHeight="6"
             orient="auto"
+            markerUnits="strokeWidth"
           >
-            <path d="M 0 5 L 5 0 L 10 5 L 5 10 Z" fill="#666" />
+            <path d="M 0 3 L 5 0 L 10 3 L 5 6 z" fill="#666" />
           </marker>
           
           <!-- 节点渐变 -->
@@ -134,6 +136,18 @@
           <!-- 节点将通过D3动态添加 -->
         </g>
       </svg>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-label">节点:</span>
+        <span class="status-value">{{ props.data.nodes.length }}</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">边:</span>
+        <span class="status-value">{{ props.data.edges.length }}</span>
+      </div>
     </div>
     
     <!-- 右键菜单 -->
@@ -410,16 +424,21 @@ function renderData() {
   edgeGroups
     .append('line')
     .attr('class', 'edge-line')
-    .attr('stroke', d => getEdgeColor(d.label))
+    .attr('stroke', '#666')
     .attr('stroke-width', 2)
     .attr('marker-end', 'url(#arrow)')
     .attr('marker-start', d => {
       // 检查是否为双向边
-      const reverseEdge = props.data.edges.find(e => 
+      const reverseEdge = props.data.edges.some(e => 
         e.source.id === d.target.id && e.target.id === d.source.id
       )
-      return reverseEdge ? 'url(#arrow-bidirectional)' : ''
+      return reverseEdge ? 'url(#arrow-bidirectional)' : null
     })
+    // 确保边线长度足够显示箭头
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y)
 
   // 添加边标签
   edgeGroups
@@ -428,12 +447,28 @@ function renderData() {
     .attr('text-anchor', 'middle')
     .attr('dy', -5)
     .attr('fill', '#333')
-    .attr('font-size', '10px')
+    .attr('font-size', '8px')  /* 调小边标签字体 */
     .attr('font-weight', 'bold')
     .text(d => d.label || '')
   
   // 将新添加的边与现有边合并
   d3Edges = d3Edges.merge(edgeGroups)
+  
+  // 更新边的箭头标记（处理更新的边）
+  d3Edges.select('.edge-line')
+    .attr('marker-end', 'url(#arrow)')
+    .attr('marker-start', d => {
+      // 检查是否为双向边
+      const reverseEdge = props.data.edges.some(e => 
+        e.source.id === d.target.id && e.target.id === d.source.id
+      )
+      return reverseEdge ? 'url(#arrow-bidirectional)' : null
+    })
+    // 确保边线长度足够显示箭头
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y)
   
   // 更新节点 - 使用完整的数据绑定模式（enter, update, exit）
   d3Nodes = d3NodesLayer
@@ -465,17 +500,17 @@ function renderData() {
   
   // 添加节点圆圈
   nodeGroups.append('circle')
-    .attr('r', 20)
+    .attr('r', 16)  // 减小节点半径，确保箭头可见
     .attr('fill', d => getNodeColor(d.label))
     .attr('stroke', '#fff')
-    .attr('stroke-width', 3)
+    .attr('stroke-width', 2)
   
   // 添加节点标签
   nodeGroups.append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', '.35em')
     .attr('fill', '#333')
-    .attr('font-size', '12px')
+    .attr('font-size', '8px')  /* 调小节点标签字体 */
     .attr('font-weight', 'bold')
     .text(d => d.label || d.id.substring(0, 8))
   
@@ -508,6 +543,19 @@ function updateSimulation() {
     
     // 重新启动模拟并设置初始alpha值，确保节点分散开来
     simulation.value.alpha(1).restart()
+  }
+  
+  // 重新应用箭头标记到所有边
+  if (d3Edges) {
+    d3Edges.select('.edge-line')
+      .attr('marker-end', 'url(#arrow)')
+      .attr('marker-start', d => {
+        // 检查是否为双向边
+        const reverseEdge = props.data.edges.some(e => 
+          e.source.id === d.target.id && e.target.id === d.source.id
+        )
+        return reverseEdge ? 'url(#arrow-bidirectional)' : null
+      })
   }
 }
 
@@ -563,7 +611,7 @@ function highlightRelated(nodeId) {
   // 高亮与选定节点相连的边
   d3Edges.select('.edge-line')
     .attr('stroke', d => 
-      d.source.id === nodeId || d.target.id === nodeId ? '#409EFF' : getEdgeColor(d.label)
+      d.source.id === nodeId || d.target.id === nodeId ? '#409EFF' : '#666'
     )
     .attr('stroke-width', d => 
       d.source.id === nodeId || d.target.id === nodeId ? 3 : 2
@@ -595,7 +643,7 @@ function highlightRelated(nodeId) {
 // 重置高亮
 function resetHighlight() {
   d3Edges.select('.edge-line')
-    .attr('stroke', d => getEdgeColor(d.label))
+    .attr('stroke', '#666')
     .attr('stroke-width', 2)
     .attr('opacity', 1)
   
@@ -654,7 +702,7 @@ function handleSearch() {
       const isConnected = matchedNodes.some(n => 
         n.id === d.source.id || n.id === d.target.id
       )
-      return isConnected ? '#409EFF' : getEdgeColor(d.label)
+      return isConnected ? '#409EFF' : '#999'
     })
   
   ElMessage.success(`找到 ${matchedNodes.length} 个匹配节点`)
@@ -703,7 +751,7 @@ function expandSelectedNode() {
       if (d.source.id === selectedNode.value.id || d.target.id === selectedNode.value.id) {
         return '#409EFF'
       }
-      return getEdgeColor(d.label)
+      return '#999'
     })
     .attr('stroke-width', d => {
       if (d.source.id === selectedNode.value.id || d.target.id === selectedNode.value.id) {
@@ -791,7 +839,7 @@ function highlightPaths() {
       if (pathNodeIds.has(d.source.id) && pathNodeIds.has(d.target.id)) {
         return '#67C23A'
       }
-      return getEdgeColor(d.label)
+      return '#999'
     })
     .attr('stroke-width', d => {
       if (pathNodeIds.has(d.source.id) && pathNodeIds.has(d.target.id)) {
@@ -870,19 +918,6 @@ function getNodeClass(label) {
   }
   
   return classes[label] || classes.default
-}
-
-// 获取边颜色
-function getEdgeColor(label) {
-  const colors = {
-    'RELATIONSHIP': '#409EFF',
-    'CONNECTED': '#67C23A',
-    'ASSOCIATED': '#E6A23C',
-    'LINKED': '#F56C6C',
-    'default': '#909399'
-  }
-  
-  return colors[label] || colors.default
 }
 
 // 缩放控制
@@ -1064,6 +1099,26 @@ function exportAsJSON() {
   align-items: center;
 }
 
+.graph-toolbar .el-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-toolbar .el-icon {
+  width: unset;
+  height: unset;
+}
+
+.graph-toolbar .el-button .el-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .graph-container {
   width: 100%;
   height: 100%;
@@ -1121,7 +1176,7 @@ function exportAsJSON() {
 .edge-sample {
   width: 30px;
   height: 2px;
-  background-color: var(--edge-color, #999);
+  background-color: #999;
   margin-right: 8px;
   position: relative;
 }
@@ -1133,7 +1188,7 @@ function exportAsJSON() {
   top: -4px;
   width: 0;
   height: 0;
-  border-left: 6px solid var(--edge-color, #999);
+  border-left: 6px solid #999;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
 }
@@ -1168,6 +1223,41 @@ function exportAsJSON() {
   height: 1px;
   background-color: #ebeef5;
   margin: 8px 0;
+}
+
+/* 状态栏样式 */
+.status-bar {
+  position: absolute;
+  bottom: 8px;
+  right: 16px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  gap: 16px;
+  z-index: 10;
+  box-sizing: border-box;
+  font-size: 12px;
+  color: #909399;
+  backdrop-filter: blur(4px);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.status-label {
+  font-weight: 500;
+}
+
+.status-value {
+  font-weight: 600;
+  color: #409EFF;
 }
 
 .node-panel {

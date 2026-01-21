@@ -179,6 +179,7 @@
       <div v-if="currentGraphDetail">
         <el-descriptions title="图信息" border :column="1">
           <el-descriptions-item label="图名称">{{ currentGraphDetail.name }}</el-descriptions-item>
+          <el-descriptions-item label="连接名称">{{ getConnectionNameById(currentGraphDetail.connectionId) }}</el-descriptions-item>
           <el-descriptions-item label="数据库类型">{{ currentGraphDetail.databaseType || '未知' }}</el-descriptions-item>
           <el-descriptions-item label="节点数">{{ currentGraphDetail.vertexCount || 0 }}</el-descriptions-item>
           <el-descriptions-item label="边数">{{ currentGraphDetail.edgeCount || 0 }}</el-descriptions-item>
@@ -457,6 +458,12 @@ const handleEdit = (graphData) => {
   editDialogVisible.value = true
 }
 
+// 根据连接ID获取连接名称
+const getConnectionNameById = (connectionId) => {
+  const connection = connections.value.find(conn => conn.id === connectionId)
+  return connection ? connection.name : '未知连接'
+}
+
 const deleteGraph = async (graph) => {
   // 支持传入图对象或图名称
   const graphName = typeof graph === 'string' ? graph : graph?.name
@@ -504,6 +511,8 @@ onUnmounted(() => {
   // 移除window滚动监听
   window.removeEventListener('scroll', handleScroll)
 })
+
+
 </script>
 
 <style scoped>
