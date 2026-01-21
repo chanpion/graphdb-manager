@@ -35,12 +35,12 @@
         <el-button-group size="small">
           <el-tooltip content="放大" placement="bottom">
             <el-button @click="zoomIn">
-              <el-icon><zoom-in /></el-icon>
+              <el-icon><ZoomIn /></el-icon>
             </el-button>
           </el-tooltip>
           <el-tooltip content="缩小" placement="bottom">
             <el-button @click="zoomOut">
-              <el-icon><zoom-out /></el-icon>
+              <el-icon><ZoomOut /></el-icon>
             </el-button>
           </el-tooltip>
           <el-tooltip content="重置视图" placement="bottom">
@@ -95,13 +95,14 @@
           <marker
             id="arrow"
             viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
+            refX="10"
+            refY="3"
             markerWidth="6"
             markerHeight="6"
             orient="auto"
+            markerUnits="strokeWidth"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
+            <path d="M 0 0 L 10 3 L 0 6 z" fill="#666" />
           </marker>
           
           <!-- 双向箭头标记 -->
@@ -109,12 +110,13 @@
             id="arrow-bidirectional"
             viewBox="0 0 10 10"
             refX="5"
-            refY="5"
+            refY="3"
             markerWidth="6"
             markerHeight="6"
             orient="auto"
+            markerUnits="strokeWidth"
           >
-            <path d="M 0 5 L 5 0 L 10 5 L 5 10 Z" fill="#666" />
+            <path d="M 0 3 L 5 0 L 10 3 L 5 6 z" fill="#666" />
           </marker>
           
           <!-- 节点渐变 -->
@@ -134,6 +136,18 @@
           <!-- 节点将通过D3动态添加 -->
         </g>
       </svg>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-label">节点:</span>
+        <span class="status-value">{{ props.data.nodes.length }}</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">边:</span>
+        <span class="status-value">{{ props.data.edges.length }}</span>
+      </div>
     </div>
     
     <!-- 右键菜单 -->
@@ -415,11 +429,16 @@ function renderData() {
     .attr('marker-end', 'url(#arrow)')
     .attr('marker-start', d => {
       // 检查是否为双向边
-      const reverseEdge = props.data.edges.find(e => 
+      const reverseEdge = props.data.edges.some(e => 
         e.source.id === d.target.id && e.target.id === d.source.id
       )
-      return reverseEdge ? 'url(#arrow-bidirectional)' : 'none'
+      return reverseEdge ? 'url(#arrow-bidirectional)' : null
     })
+    // 确保边线长度足够显示箭头
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y)
 
   // 添加边标签
   edgeGroups
@@ -428,12 +447,28 @@ function renderData() {
     .attr('text-anchor', 'middle')
     .attr('dy', -5)
     .attr('fill', '#333')
-    .attr('font-size', '10px')
+    .attr('font-size', '8px')  /* 调小边标签字体 */
     .attr('font-weight', 'bold')
     .text(d => d.label || '')
   
   // 将新添加的边与现有边合并
   d3Edges = d3Edges.merge(edgeGroups)
+  
+  // 更新边的箭头标记（处理更新的边）
+  d3Edges.select('.edge-line')
+    .attr('marker-end', 'url(#arrow)')
+    .attr('marker-start', d => {
+      // 检查是否为双向边
+      const reverseEdge = props.data.edges.some(e => 
+        e.source.id === d.target.id && e.target.id === d.source.id
+      )
+      return reverseEdge ? 'url(#arrow-bidirectional)' : null
+    })
+    // 确保边线长度足够显示箭头
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y)
   
   // 更新节点 - 使用完整的数据绑定模式（enter, update, exit）
   d3Nodes = d3NodesLayer
@@ -465,17 +500,17 @@ function renderData() {
   
   // 添加节点圆圈
   nodeGroups.append('circle')
-    .attr('r', 20)
+    .attr('r', 16)  // 减小节点半径，确保箭头可见
     .attr('fill', d => getNodeColor(d.label))
     .attr('stroke', '#fff')
-    .attr('stroke-width', 3)
+    .attr('stroke-width', 2)
   
   // 添加节点标签
   nodeGroups.append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', '.35em')
     .attr('fill', '#333')
-    .attr('font-size', '12px')
+    .attr('font-size', '8px')  /* 调小节点标签字体 */
     .attr('font-weight', 'bold')
     .text(d => d.label || d.id.substring(0, 8))
   
@@ -508,6 +543,19 @@ function updateSimulation() {
     
     // 重新启动模拟并设置初始alpha值，确保节点分散开来
     simulation.value.alpha(1).restart()
+  }
+  
+  // 重新应用箭头标记到所有边
+  if (d3Edges) {
+    d3Edges.select('.edge-line')
+      .attr('marker-end', 'url(#arrow)')
+      .attr('marker-start', d => {
+        // 检查是否为双向边
+        const reverseEdge = props.data.edges.some(e => 
+          e.source.id === d.target.id && e.target.id === d.source.id
+        )
+        return reverseEdge ? 'url(#arrow-bidirectional)' : null
+      })
   }
 }
 
@@ -1175,6 +1223,41 @@ function exportAsJSON() {
   height: 1px;
   background-color: #ebeef5;
   margin: 8px 0;
+}
+
+/* 状态栏样式 */
+.status-bar {
+  position: absolute;
+  bottom: 8px;
+  right: 16px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  gap: 16px;
+  z-index: 10;
+  box-sizing: border-box;
+  font-size: 12px;
+  color: #909399;
+  backdrop-filter: blur(4px);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.status-label {
+  font-weight: 500;
+}
+
+.status-value {
+  font-weight: 600;
+  color: #409EFF;
 }
 
 .node-panel {
