@@ -74,35 +74,42 @@
       <!-- 主内容区：可视化展示 -->
       <el-main class="visualization-area">
         <!-- 工具栏 -->
-        <!-- <div class="viz-toolbar">
-          <div class="toolbar-left">
-            <h2>图分析</h2>
-            <span class="stats" v-if="graphData.nodes.length > 0">
-              节点: {{ graphData.nodes.length }} | 边: {{ graphData.edges.length }}
-            </span>
-          </div>
-          <div class="toolbar-right">
-            <el-button-group size="small">
-              <el-button @click="resetView">
-                <el-icon><Refresh /></el-icon>
-                重置视图
-              </el-button>
-              <el-button @click="exportVisualization">
-                <el-icon><Download /></el-icon>
-                导出图片
-              </el-button>
-              <el-button @click="toggleFullscreen">
-                <el-icon><FullScreen /></el-icon>
-                全屏
-              </el-button>
-            </el-button-group>
-          </div>
-        </div> -->
+<!--        <div class="viz-toolbar">-->
+<!--          <div class="toolbar-left">-->
+<!--            <h2>图分析</h2>-->
+<!--            <span class="stats" v-if="graphData.nodes.length > 0">-->
+<!--              节点: {{ graphData.nodes.length }} | 边: {{ graphData.edges.length }}-->
+<!--            </span>-->
+<!--          </div>-->
+<!--          <div class="toolbar-right">-->
+<!--            <el-button-group size="small">-->
+<!--              <el-button @click="zoomIn">-->
+<!--                <el-icon><ZoomIn /></el-icon>-->
+<!--              </el-button>-->
+<!--              <el-button @click="zoomOut">-->
+<!--                <el-icon><ZoomOut /></el-icon>-->
+<!--              </el-button>-->
+<!--              <el-button @click="resetView">-->
+<!--                <el-icon><Refresh /></el-icon>-->
+<!--                重置视图-->
+<!--              </el-button>-->
+<!--              <el-button @click="exportVisualization">-->
+<!--                <el-icon><Download /></el-icon>-->
+<!--                导出图片-->
+<!--              </el-button>-->
+<!--              <el-button @click="toggleFullscreen">-->
+<!--                <el-icon><FullScreen /></el-icon>-->
+<!--                全屏-->
+<!--              </el-button>-->
+<!--            </el-button-group>-->
+<!--          </div>-->
+<!--        </div>-->
 
         <!-- 可视化画布 -->
         <div class="viz-canvas-container" ref="vizContainer">
           <div class="graph-container">
             <D3Graph 
+              ref="d3GraphRef"
               :data="graphData"
               :width="vizWidth"
               :height="vizHeight"
@@ -174,7 +181,9 @@ import {
   MagicStick,
   Delete,
   Close,
-  Expand
+  Expand,
+  ZoomIn,
+  ZoomOut
 } from '@element-plus/icons-vue'
 
 // 状态管理
@@ -196,6 +205,7 @@ const vizWidth = ref(800)
 const vizHeight = ref(600)
 const queryEditor = ref(null)
 const highlightElement = ref(null)
+const d3GraphRef = ref(null)
 
 const detailDrawerVisible = ref(false)
 const selectedElement = ref(null)
@@ -579,8 +589,22 @@ const autocompletePatterns = [
 ]
 
 const resetView = () => {
-  // D3Graph组件应该提供重置视图的方法
+  if (d3GraphRef.value) {
+    d3GraphRef.value.resetView()
+  }
   ElMessage.success('视图已重置')
+}
+
+const zoomIn = () => {
+  if (d3GraphRef.value) {
+    d3GraphRef.value.zoomIn()
+  }
+}
+
+const zoomOut = () => {
+  if (d3GraphRef.value) {
+    d3GraphRef.value.zoomOut()
+  }
 }
 
 const exportVisualization = () => {

@@ -35,12 +35,12 @@
         <el-button-group size="small">
           <el-tooltip content="放大" placement="bottom">
             <el-button @click="zoomIn">
-              <el-icon><zoom-in /></el-icon>
+              <el-icon><ZoomIn /></el-icon>
             </el-button>
           </el-tooltip>
           <el-tooltip content="缩小" placement="bottom">
             <el-button @click="zoomOut">
-              <el-icon><zoom-out /></el-icon>
+              <el-icon><ZoomOut /></el-icon>
             </el-button>
           </el-tooltip>
           <el-tooltip content="重置视图" placement="bottom">
@@ -410,7 +410,7 @@ function renderData() {
   edgeGroups
     .append('line')
     .attr('class', 'edge-line')
-    .attr('stroke', '#666')
+    .attr('stroke', d => getEdgeColor(d.label))
     .attr('stroke-width', 2)
     .attr('marker-end', 'url(#arrow)')
     .attr('marker-start', d => {
@@ -418,7 +418,7 @@ function renderData() {
       const reverseEdge = props.data.edges.find(e => 
         e.source.id === d.target.id && e.target.id === d.source.id
       )
-      return reverseEdge ? 'url(#arrow-bidirectional)' : 'none'
+      return reverseEdge ? 'url(#arrow-bidirectional)' : ''
     })
 
   // 添加边标签
@@ -563,7 +563,7 @@ function highlightRelated(nodeId) {
   // 高亮与选定节点相连的边
   d3Edges.select('.edge-line')
     .attr('stroke', d => 
-      d.source.id === nodeId || d.target.id === nodeId ? '#409EFF' : '#666'
+      d.source.id === nodeId || d.target.id === nodeId ? '#409EFF' : getEdgeColor(d.label)
     )
     .attr('stroke-width', d => 
       d.source.id === nodeId || d.target.id === nodeId ? 3 : 2
@@ -595,7 +595,7 @@ function highlightRelated(nodeId) {
 // 重置高亮
 function resetHighlight() {
   d3Edges.select('.edge-line')
-    .attr('stroke', '#666')
+    .attr('stroke', d => getEdgeColor(d.label))
     .attr('stroke-width', 2)
     .attr('opacity', 1)
   
@@ -654,7 +654,7 @@ function handleSearch() {
       const isConnected = matchedNodes.some(n => 
         n.id === d.source.id || n.id === d.target.id
       )
-      return isConnected ? '#409EFF' : '#999'
+      return isConnected ? '#409EFF' : getEdgeColor(d.label)
     })
   
   ElMessage.success(`找到 ${matchedNodes.length} 个匹配节点`)
@@ -703,7 +703,7 @@ function expandSelectedNode() {
       if (d.source.id === selectedNode.value.id || d.target.id === selectedNode.value.id) {
         return '#409EFF'
       }
-      return '#999'
+      return getEdgeColor(d.label)
     })
     .attr('stroke-width', d => {
       if (d.source.id === selectedNode.value.id || d.target.id === selectedNode.value.id) {
@@ -791,7 +791,7 @@ function highlightPaths() {
       if (pathNodeIds.has(d.source.id) && pathNodeIds.has(d.target.id)) {
         return '#67C23A'
       }
-      return '#999'
+      return getEdgeColor(d.label)
     })
     .attr('stroke-width', d => {
       if (pathNodeIds.has(d.source.id) && pathNodeIds.has(d.target.id)) {
@@ -870,6 +870,19 @@ function getNodeClass(label) {
   }
   
   return classes[label] || classes.default
+}
+
+// 获取边颜色
+function getEdgeColor(label) {
+  const colors = {
+    'RELATIONSHIP': '#409EFF',
+    'CONNECTED': '#67C23A',
+    'ASSOCIATED': '#E6A23C',
+    'LINKED': '#F56C6C',
+    'default': '#909399'
+  }
+  
+  return colors[label] || colors.default
 }
 
 // 缩放控制
@@ -1051,26 +1064,6 @@ function exportAsJSON() {
   align-items: center;
 }
 
-.graph-toolbar .el-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.graph-toolbar .el-icon {
-  width: unset;
-  height: unset;
-}
-
-.graph-toolbar .el-button .el-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .graph-container {
   width: 100%;
   height: 100%;
@@ -1128,7 +1121,7 @@ function exportAsJSON() {
 .edge-sample {
   width: 30px;
   height: 2px;
-  background-color: #999;
+  background-color: var(--edge-color, #999);
   margin-right: 8px;
   position: relative;
 }
@@ -1140,7 +1133,7 @@ function exportAsJSON() {
   top: -4px;
   width: 0;
   height: 0;
-  border-left: 6px solid #999;
+  border-left: 6px solid var(--edge-color, #999);
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
 }
