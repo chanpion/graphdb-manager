@@ -100,4 +100,14 @@ public interface DataHandler {
      * @throws CoreException 更新异常
      */
     Map<String, Object> updateEdge(String graphName, String uid, Map<String, Object> properties);
+
+    /**
+     * 执行原生查询
+     * @param graphName 图名称
+     * @param query 原生查询语句
+     * @param dbType 数据库类型
+     * @return 查询结果
+     * @throws CoreException 查询异常
+     */
+    Map<String, Object> executeNativeQuery(String graphName, String query, DatabaseTypeEnum dbType);
 }

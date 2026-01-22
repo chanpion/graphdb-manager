@@ -800,4 +800,117 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             throw new CoreException("执行NebulaGraph原生查询失败: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public Map<String, Object> executeNativeQuery(String graphName, String query, DatabaseTypeEnum dbType) {
+        try {
+            // NebulaGraph使用nGQL查询语言
+            System.out.println("执行nGQL查询: " + query);
+
+            // 根据查询类型返回不同的统计信息
+            if (query.contains("count")) {
+                // 节点数量统计
+                String vertexCountQuery = "MATCH (v) RETURN count(v) AS count";
+                ResultSet result = session.execute(vertexCountQuery);
+                long vertexCount = 0L;
+                if (result.isSucceeded() && result.rowsSize() > 0) {
+                    try {
+                        ValueWrapper value = result.rowValues(0).get(0);
+                        vertexCount = value.asLong();
+                    } catch (Exception e) {
+                        System.out.println("获取节点数量失败: " + e.getMessage());
+                    }
+                }
+                return Map.of("vertexCount", vertexCount);
+
+            } else if (query.contains("degreeDistribution")) {
+                // 度分布统计
+                String degreeQuery = "MATCH (v) RETURN v.degree AS degree ORDER BY degree DESC LIMIT 100";
+                ResultSet result = session.execute(degreeQuery);
+                Map<String, Long> distribution = new HashMap<>();
+                if (result.isSucceeded() && result.rowsSize() > 0) {
+                    for (int i = 0; i < result.rowsSize(); i++) {
+                        try {
+                            List<ValueWrapper> row = result.rowValues(i).values();
+                            if (!row.isEmpty()) {
+                                ValueWrapper degreeValue = row.get(0);
+                                Long degree = degreeValue.asLong();
+                                distribution.put(String.valueOf(degree), distribution.getOrDefault(String.valueOf(degree), 0L) + 1);
+                            }
+                        } catch (Exception e) {
+                            System.out.println("处理度分布数据失败: " + e.getMessage());
+                        }
+                    }
+                }
+                return Map.of("degreeDistribution", distribution);
+
+            } else if (query.contains("edgeTypeDistribution")) {
+                // 边类型分布统计
+                String edgeTypeQuery = "MATCH ()-[r]->(r) RETURN type(r) AS edgeType, count(r) AS count ORDER BY count DESC";
+                ResultSet result = session.execute(edgeTypeQuery);
+                Map<String, Long> distribution = new HashMap<>();
+                if (result.isSucceeded() && result.rowsSize() > 0) {
+                    for (int i = 0; i < result.rowsSize(); i++) {
+                        try {
+                            List<ValueWrapper> row = result.rowValues(i).values();
+                            if (row.size() >= 2) {
+                                String type = row.get(0).asString();
+                                Long count = row.get(1).asLong();
+                                distribution.put(type, count);
+                            }
+                        } catch (Exception e) {
+                            System.out.println("处理边类型分布数据失败: " + e.getMessage());
+                        }
+                    }
+                }
+                return Map.of("edgeTypeDistribution", distribution);
+
+            } else {
+                // 通用查询执行
+                ResultSet result = session.execute(query);
+                List<Map<String, Object>> results = new ArrayList<>();
+                
+                if (result.isSucceeded() && result.rowsSize() > 0) {
+                    List<String> columnNames = result.getColumnNames();
+                    
+                    for (int i = 0; i < result.rowsSize(); i++) {
+                        try {
+                            List<ValueWrapper> row = result.rowValues(i).values();
+                            Map<String, Object> rowData = new HashMap<>();
+                            
+                            for (int j = 0; j < row.size() && j < columnNames.size(); j++) {
+                                ValueWrapper valueWrapper = row.get(j);
+                                String columnName = columnNames.get(j);
+                                
+                                Object value;
+                                if (valueWrapper.isString()) {
+                                    value = valueWrapper.asString();
+                                } else if (valueWrapper.isLong()) {
+                                    value = valueWrapper.asLong();
+                                } else if (valueWrapper.isDouble()) {
+                                    value = valueWrapper.asDouble();
+                                } else if (valueWrapper.isBoolean()) {
+                                    value = valueWrapper.asBoolean();
+                                } else {
+                                    value = valueWrapper.toString();
+                                }
+                                rowData.put(columnName, value);
+                            }
+                            results.add(rowData);
+                        } catch (Exception e) {
+                            System.out.println("处理查询结果行失败: " + e.getMessage());
+                        }
+                    }
+                }
+                
+                return Map.of(
+                    "resultCount", result.isSucceeded() ? result.rowsSize() : 0,
+                    "results", results
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("nGQL查询失败: " + e.getMessage());
+            throw new CoreException("执行nGQL查询失败: " + e.getMessage(), e);
+        }
+    }
 }

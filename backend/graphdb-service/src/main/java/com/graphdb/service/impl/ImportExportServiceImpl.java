@@ -1,7 +1,9 @@
 package com.graphdb.service.impl;
 
 import com.graphdb.service.ImportExportService;
+import com.graphdb.service.GraphService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -13,6 +15,9 @@ import java.io.Writer;
 @Slf4j
 @Service
 public class ImportExportServiceImpl implements ImportExportService {
+
+    @Autowired
+    private GraphService graphService;
     
     @Override
     public Map<String, Object> importVerticesFromCsv(Long connectionId, String graphName, 

@@ -21,7 +21,7 @@ public class ConnectionConfig {
     /**
      * 数据库类型：NEO4J/NEBULA/JANUS
      */
-    private String databaseType;
+    private String type;
     
     /**
      * 主机地址
@@ -83,10 +83,7 @@ public class ConnectionConfig {
      */
     private String description;
     
-    /**
-     * 优先级：1-10，数字越小优先级越高
-     */
-    private Integer priority;
+
     
     /**
      * 创建人

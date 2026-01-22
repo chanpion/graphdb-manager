@@ -1,7 +1,13 @@
 package com.graphdb.storage.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 /**
@@ -25,7 +31,7 @@ public class ConnectionEntity {
     /**
      * 数据库类型：NEO4J/NEBULA/JANUS
      */
-    private String databaseType;
+    private String type;
     
     /**
      * 主机地址
@@ -76,11 +82,6 @@ public class ConnectionEntity {
      * 连接描述
      */
     private String description;
-    
-    /**
-     * 优先级：1-10，数字越小优先级越高
-     */
-    private Integer priority;
     
     /**
      * 创建人

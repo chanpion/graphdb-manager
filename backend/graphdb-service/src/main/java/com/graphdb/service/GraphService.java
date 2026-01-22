@@ -104,7 +104,7 @@ public class GraphService {
     public List<String> getGraphs(Long connectionId) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -120,7 +120,7 @@ public class GraphService {
     public GraphSchema getGraphSchema(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -136,7 +136,7 @@ public class GraphService {
     public void createGraph(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -152,7 +152,7 @@ public class GraphService {
     public void deleteGraph(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -168,7 +168,7 @@ public class GraphService {
         ConnectionConfig config = new ConnectionConfig();
         config.setId(dto.getId());
         config.setName(dto.getName());
-        config.setDatabaseType(dto.getDatabaseType());
+        config.setType(dto.getType());
         config.setHost(dto.getHost());
         config.setPort(dto.getPort());
         config.setUsername(dto.getUsername());
@@ -182,7 +182,6 @@ public class GraphService {
         config.setExtraParams(dto.getExtraParams());
         config.setStatus(dto.getStatus());
         config.setDescription(dto.getDescription());
-        config.setPriority(dto.getPriority());
         config.setCreatedBy(dto.getCreatedBy());
         return config;
     }
@@ -191,7 +190,7 @@ public class GraphService {
     public List<LabelType> getVertexTypes(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -207,7 +206,7 @@ public class GraphService {
     public List<LabelType> getEdgeTypes(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -223,7 +222,7 @@ public class GraphService {
     public void createVertexType(Long connectionId, String graphName, LabelType labelType) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -239,7 +238,7 @@ public class GraphService {
     public void deleteVertexType(Long connectionId, String graphName, String labelName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -255,7 +254,7 @@ public class GraphService {
     public void createEdgeType(Long connectionId, String graphName, LabelType labelType) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -271,7 +270,7 @@ public class GraphService {
     public void deleteEdgeType(Long connectionId, String graphName, String labelName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -289,7 +288,7 @@ public class GraphService {
     public Vertex createVertex(Long connectionId, String graphName, String label, Map<String, Object> properties) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -311,7 +310,7 @@ public class GraphService {
     public List<Vertex> queryVertices(Long connectionId, String graphName, QueryCondition condition) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -336,7 +335,7 @@ public class GraphService {
     public Vertex updateVertex(Long connectionId, String graphName, String uid, Map<String, Object> properties) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -357,7 +356,7 @@ public class GraphService {
     public void deleteVertex(Long connectionId, String graphName, String uid) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -378,7 +377,7 @@ public class GraphService {
                           String sourceUid, String targetUid, Map<String, Object> properties) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -399,7 +398,7 @@ public class GraphService {
     public List<Edge> queryEdges(Long connectionId, String graphName, QueryCondition condition) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -423,7 +422,7 @@ public class GraphService {
     public Edge updateEdge(Long connectionId, String graphName, String uid, Map<String, Object> properties) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -444,7 +443,7 @@ public class GraphService {
     public void deleteEdge(Long connectionId, String graphName, String uid) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -465,7 +464,7 @@ public class GraphService {
                                     String queryLanguage, String queryStatement) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -482,7 +481,7 @@ public class GraphService {
                                CsvImportConfig config, java.io.InputStream csvStream) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig configModel = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(configModel.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(configModel.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -570,7 +569,7 @@ public class GraphService {
     public Map<String, Object> getGraphDetail(Long connectionId, String graphName) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
@@ -580,7 +579,7 @@ public class GraphService {
             Map<String, Object> detail = new HashMap<>();
             detail.put("name", graphName);
             detail.put("connectionId", connectionId);
-            detail.put("databaseType", config.getDatabaseType());
+            detail.put("databaseType", config.getType());
             detail.put("vertexCount", 0); // 需要从适配器获取实际数据
             detail.put("edgeCount", 0);    // 需要从适配器获取实际数据
             detail.put("schemaInfo", adapter.getGraphSchema(config, graphName));
@@ -596,7 +595,7 @@ public class GraphService {
     public void batchDeleteEdges(Long connectionId, String graphName, List<String> uids) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
-        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
             throw new RuntimeException("未找到对应数据库类型的适配器: " + type);

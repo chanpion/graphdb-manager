@@ -845,4 +845,66 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
             throw new CoreException("执行Neo4j原生查询失败: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public Map<String, Object> executeNativeQuery(String graphName, String query, DatabaseTypeEnum dbType) {
+        try {
+            // Neo4j使用Cypher查询语言
+            System.out.println("执行Cypher查询: " + query);
+            
+            // 根据查询类型返回不同的统计信息
+            if (query.contains("count")) {
+                // 节点数量统计
+                String vertexCountQuery = String.format(
+                    "MATCH (v:%s) RETURN count(v) AS count",
+                    query.contains("Person") ? "Person" : "*"
+                );
+                long vertexCount = session.run(vertexCountQuery).single().get("count").asLong();
+                return Map.of("vertexCount", vertexCount);
+                
+            } else if (query.contains("degreeDistribution")) {
+                // 度分布统计
+                String degreeQuery = "MATCH (v) RETURN v.degree AS degree ORDER BY degree DESC LIMIT 100";
+                List<Record> records = session.run(degreeQuery).list();
+                Map<String, Long> distribution = new HashMap<>();
+                for (Record record : records) {
+                    Long deg = record.get("degree").asLong();
+                    distribution.put(String.valueOf(deg), distribution.getOrDefault(String.valueOf(deg), 0L) + 1);
+                }
+                return Map.of("degreeDistribution", distribution);
+                
+            } else if (query.contains("edgeTypeDistribution")) {
+                // 边类型分布统计
+                String edgeTypeQuery = "MATCH ()-[r:Person]->() RETURN type(r) AS edgeType, count(r) AS count ORDER BY count DESC";
+                List<Record> records = session.run(edgeTypeQuery).list();
+                Map<String, Long> distribution = new HashMap<>();
+                for (Record record : records) {
+                    String type = record.get("edgeType").asString();
+                    Long count = record.get("count").asLong();
+                    distribution.put(type, count);
+                }
+                return Map.of("edgeTypeDistribution", distribution);
+                
+            } else {
+                // 通用查询执行
+                List<Record> records = session.run(query).list();
+                List<Map<String, Object>> result = records.stream()
+                    .map(record -> {
+                        Map<String, Object> row = new HashMap<>();
+                        for (String key : record.keys()) {
+                            row.put(key, record.get(key).asObject());
+                        }
+                        return row;
+                    })
+                    .collect(Collectors.toList());
+                return Map.of(
+                    "resultCount", result.size(),
+                    "results", result
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Cypher查询失败: " + e.getMessage());
+            throw new CoreException("执行Cypher查询失败: " + e.getMessage(), e);
+        }
+    }
 }

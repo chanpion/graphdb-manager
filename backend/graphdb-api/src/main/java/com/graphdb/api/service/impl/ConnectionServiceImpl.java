@@ -32,7 +32,7 @@ public class ConnectionServiceImpl implements ConnectionService {
     public List<ConnectionConfigDTO> list() {
         List<ConnectionEntity> entities = connectionMapper.selectList(null);
         return entities.stream()
-                .filter(entity -> entity.getDeleted() == 0) // 未删除的
+                .filter(entity -> entity.getDeleted() == 0)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -56,7 +56,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         try {
             // 创建临时配置进行连接测试
             ConnectionConfig config = new ConnectionConfig();
-            config.setDatabaseType(databaseType);
+            config.setType(databaseType);
             config.setHost(host);
             config.setPort(port);
             config.setUsername(username);
@@ -119,7 +119,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         
         // 更新字段
         entity.setName(configDTO.getName());
-        entity.setDatabaseType(configDTO.getDatabaseType());
+        entity.setType(configDTO.getType());
         entity.setHost(configDTO.getHost());
         entity.setPort(configDTO.getPort());
         entity.setUsername(configDTO.getUsername());
@@ -128,7 +128,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         entity.setStorageConfig(configDTO.getStorageConfig());
         entity.setExtraParams(configDTO.getJsonParams());
         entity.setDescription(configDTO.getDescription());
-        entity.setPriority(configDTO.getPriority());
+
         entity.setUpdatedAt(LocalDateTime.now());
         
         // 如果提供了新密码，则更新加密密码
@@ -167,7 +167,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         }
         
         // 通过GraphService调用适配器进行测试
-        DatabaseTypeEnum dbType = DatabaseTypeEnum.fromCode(config.getDatabaseType());
+        DatabaseTypeEnum dbType = DatabaseTypeEnum.fromCode(config.getType());
         try {
             boolean success = graphService.getAdapter(dbType).testConnection(config);
             // 更新连接状态
@@ -196,7 +196,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         // 创建临时配置用于测试指定数据库
         ConnectionConfigDTO configDTO = getById(id);
         ConnectionConfig config = convertDTOToModel(configDTO);
-        config.setDatabaseType(databaseType);
+        config.setType(databaseType);
         
         // 解密密码
         String encrypted = connectionMapper.selectById(id).getPasswordEncrypted();
@@ -227,7 +227,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionConfigDTO dto = new ConnectionConfigDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
-        dto.setDatabaseType(entity.getDatabaseType());
+        dto.setType(entity.getType());
         dto.setHost(entity.getHost());
         dto.setPort(entity.getPort());
         dto.setUsername(entity.getUsername());
@@ -241,7 +241,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         dto.setExtraParams(entity.getExtraParams());
         dto.setStatus(entity.getStatus());
         dto.setDescription(entity.getDescription());
-        dto.setPriority(entity.getPriority());
+
         dto.setCreatedBy(entity.getCreatedBy());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
@@ -252,7 +252,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionEntity entity = new ConnectionEntity();
         entity.setId(dto.getId());
         entity.setName(dto.getName());
-        entity.setDatabaseType(dto.getDatabaseType());
+        entity.setType(dto.getType());
         entity.setHost(dto.getHost());
         entity.setPort(dto.getPort());
         entity.setUsername(dto.getUsername());
@@ -263,7 +263,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         entity.setExtraParams(dto.getJsonParams());
         entity.setStatus(dto.getStatus());
         entity.setDescription(dto.getDescription());
-        entity.setPriority(dto.getPriority());
+
         entity.setCreatedBy(dto.getCreatedBy());
         entity.setCreatedAt(dto.getCreatedAt());
         entity.setUpdatedAt(dto.getUpdatedAt());
@@ -274,7 +274,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionConfig config = new ConnectionConfig();
         config.setId(dto.getId());
         config.setName(dto.getName());
-        config.setDatabaseType(dto.getDatabaseType());
+        config.setType(dto.getType());
         config.setHost(dto.getHost());
         config.setPort(dto.getPort());
         config.setUsername(dto.getUsername());
@@ -288,7 +288,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         config.setExtraParams(dto.getExtraParams());
         config.setStatus(dto.getStatus());
         config.setDescription(dto.getDescription());
-        config.setPriority(dto.getPriority());
+
         config.setCreatedBy(dto.getCreatedBy());
         return config;
     }
