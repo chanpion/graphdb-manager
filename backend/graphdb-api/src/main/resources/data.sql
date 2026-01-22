@@ -1,10 +1,10 @@
 -- 图数据库管理系统初始化数据
 
 -- 插入默认连接配置数据
-INSERT IGNORE INTO `connection_config` (`id`, `name`, `database_type`, `host`, `port`, `username`, `description`, `status`, `priority`, `created_by`) VALUES
-(1, '本地Neo4j测试', 'NEO4J', 'localhost', 7474, 'neo4j', '本地Neo4j数据库测试连接', 1, 1, 'system'),
-(2, '本地Nebula测试', 'NEBULA', 'localhost', 9669, 'root', '本地NebulaGraph数据库测试连接', 0, 2, 'system'),
-(3, '本地Janus测试', 'JANUS', 'localhost', 8182, '', '本地JanusGraph数据库测试连接', 0, 3, 'system');
+INSERT IGNORE INTO `connection_config` (`id`, `name`, `type`, `host`, `port`, `username`, `description`, `status`, `created_by`) VALUES
+(1, '本地Neo4j测试', 'NEO4J', 'localhost', 7474, 'neo4j', '本地Neo4j数据库测试连接', 1,  'system'),
+(2, '本地Nebula测试', 'NEBULA', 'localhost', 9669, 'root', '本地NebulaGraph数据库测试连接', 0, 'system'),
+(3, '本地Janus测试', 'JANUS', 'localhost', 8182, '', '本地JanusGraph数据库测试连接', 0, 'system');
 
 -- 插入默认图实例数据
 INSERT IGNORE INTO `graph_instance` (`id`, `connection_id`, `graph_name`, `database_type`, `vertex_count`, `edge_count`, `description`, `is_default`, `source_type`) VALUES

@@ -231,10 +231,23 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
         }
         
         try {
-            // NebulaGraph没有直接通过边ID删除边的API，需要通过查询来删除
-            // 这里需要先查询边信息，然后删除
-            // 实际实现中需要更复杂的逻辑
-            System.out.println("NebulaGraph边删除需要先查询边信息，此功能需要进一步完善");
+            // NebulaGraph删除边需要知道源节点、目标节点和边类型
+            // 假设uid格式为 "edge_edgeType_sourceVertexId_targetVertexId"
+            if (uid != null && uid.startsWith("edge_")) {
+                String[] parts = uid.substring(5).split("_", 3);
+                if (parts.length == 3) {
+                    String edgeType = parts[0];
+                    String sourceId = parts[1];
+                    String targetId = parts[2];
+                    
+                    // 删除指定边
+                    String query = String.format("DELETE EDGE `%s` \"%s\"->\"%s\";", edgeType, sourceId, targetId);
+                    ResultSet result = session.execute(query);
+                    if (!result.isSucceeded()) {
+                        throw new CoreException("删除边失败: " + result.getErrorMessage());
+                    }
+                }
+            }
         } catch (Exception e) {
             throw new CoreException("删除Nebula边失败: " + e.getMessage(), e);
         }

@@ -26,7 +26,7 @@ public interface ConnectionMapper extends BaseMapper<ConnectionEntity> {
      * @param databaseType 数据库类型
      * @return 连接列表
      */
-    @Select("SELECT * FROM connection_config WHERE database_type = #{databaseType} AND deleted = 0 ORDER BY created_at DESC")
+    @Select("SELECT * FROM connection_config WHERE type = #{databaseType} AND deleted = 0 ORDER BY created_at DESC")
     List<ConnectionEntity> selectByDatabaseType(@Param("databaseType") String databaseType);
     
     /**

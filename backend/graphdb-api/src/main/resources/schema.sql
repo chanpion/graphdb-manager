@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS `connection_config` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `name` varchar(100) NOT NULL COMMENT '连接名称',
-    `database_type` varchar(20) NOT NULL COMMENT '数据库类型：NEO4J/NEBULA/JANUS',
+    `type` varchar(20) NOT NULL COMMENT '数据库类型：NEO4J/NEBULA/JANUS',
     `host` varchar(100) NOT NULL COMMENT '主机地址',
     `port` int NOT NULL COMMENT '端口号',
     `username` varchar(100) DEFAULT NULL COMMENT '用户名',
@@ -15,13 +15,12 @@ CREATE TABLE IF NOT EXISTS `connection_config` (
     `extra_params` text DEFAULT NULL COMMENT '额外连接参数（JSON格式）',
     `status` int DEFAULT 0 COMMENT '连接状态：0-未测试，1-正常，2-异常',
     `description` varchar(500) DEFAULT NULL COMMENT '连接描述',
-    `priority` int DEFAULT 5 COMMENT '优先级：1-10，数字越小优先级越高',
     `created_by` varchar(100) DEFAULT 'system' COMMENT '创建人',
     `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` int DEFAULT 0 COMMENT '逻辑删除标记（0-未删除，1-已删除）',
     PRIMARY KEY (`id`),
-    KEY `idx_conn_database_type` (`database_type`)
+    KEY `idx_conn_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='连接配置表';
 
 -- 图实例表
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `graph_instance` (
     `source_type` varchar(20) DEFAULT 'PLATFORM' COMMENT '图来源：PLATFORM(平台创建)/EXISTING(图数据库已有)',
     PRIMARY KEY (`id`),
     KEY `idx_graph_connection_id` (`connection_id`),
-    KEY `idx_graph_database_type` (`database_type`),
+    KEY `idx_graph_type` (`database_type`),
     KEY `idx_graph_status` (`status`),
     CONSTRAINT `fk_graph_instance_connection` FOREIGN KEY (`connection_id`) REFERENCES `connection_config` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图实例表';
