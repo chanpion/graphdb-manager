@@ -7,9 +7,9 @@ const CONFIG_KEY = 'graphdb_api_config'
 
 // 默认配置
 const defaultConfig = {
-  useMock: true,           // 是否使用 Mock 模式（默认 true，使用 Mock 数据）
+  useMock: false,           // 是否使用 Mock 模式（默认 false，使用真实 API）
   mockDelay: 300,           // Mock 响应延迟（毫秒）
-  realApiUrl: 'http://localhost:8080/api',  // 真实 API 基础 URL
+  realApiUrl: 'http://localhost:8081/api/v1',  // 真实 API 基础 URL（包含版本号，端口8081）
   realApiTimeout: 30000     // 真实 API 请求超时时间（毫秒）
 }
 

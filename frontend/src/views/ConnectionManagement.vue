@@ -291,7 +291,9 @@ const loadDefaultParams = () => {
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    connections.value = res.data || []
+    // 确保 data 是数组
+    const data = res.data
+    connections.value = Array.isArray(data) ? data : []
   } catch (error) {
     console.error('加载连接列表失败:', error)
   }

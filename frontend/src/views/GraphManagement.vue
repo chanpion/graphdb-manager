@@ -322,7 +322,8 @@ const resetPagination = () => {
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    connections.value = res.data || []
+    const data = res.data
+    connections.value = Array.isArray(data) ? data : []
     // 默认不选择任何连接，显示全部连接的图
     if (connections.value.length > 0 && selectedConnectionId.value === undefined) {
       selectedConnectionId.value = ''

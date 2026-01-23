@@ -1,7 +1,7 @@
 <template>
   <el-card class="connection-card" :class="cardClass" @click="$emit('click', connection)">
     <div class="card-header">
-      <div class="icon-wrapper" :class="`icon-${connection.type.toLowerCase()}`">
+      <div class="icon-wrapper" :class="`icon-${connectionType.toLowerCase()}`">
         <el-icon :size="24" :color="iconColor">
           <component :is="iconComponent" />
         </el-icon>
@@ -77,13 +77,19 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'test', 'edit', 'delete'])
 
+// 获取数据库类型，兼容旧的type字段和新的databaseType字段
+const connectionType = computed(() => {
+  if (!props.connection) return 'UNKNOWN'
+  return props.connection.databaseType || props.connection.type || 'UNKNOWN'
+})
+
 const iconComponent = computed(() => {
   const iconMap = {
     'NEO4J': DataLine,
     'NEBULA': Share,
     'JANUS': Aim
   }
-  return iconMap[props.connection.type] || DataLine
+  return iconMap[connectionType.value] || DataLine
 })
 
 const iconColor = computed(() => {
@@ -92,7 +98,7 @@ const iconColor = computed(() => {
     'NEBULA': '#00D6A9',
     'JANUS': '#6C5CE7'
   }
-  return colorMap[props.connection.type] || '#F5A623'
+  return colorMap[connectionType.value] || '#F5A623'
 })
 
 const tagType = computed(() => {
@@ -101,7 +107,7 @@ const tagType = computed(() => {
     'NEBULA': 'success',
     'JANUS': 'info'
   }
-  return typeMap[props.connection.type] || 'info'
+  return typeMap[connectionType.value] || 'info'
 })
 
 const dbTypeLabel = computed(() => {
@@ -110,23 +116,26 @@ const dbTypeLabel = computed(() => {
     'NEBULA': 'NebulaGraph',
     'JANUS': 'JanusGraph'
   }
-  return labelMap[props.connection.type] || '未知'
+  return labelMap[connectionType.value] || '未知'
 })
 
 const cardClass = computed(() => {
-  return `card-${props.connection.type.toLowerCase()}`
+  return `card-${connectionType.value.toLowerCase()}`
 })
 
 const statusClass = computed(() => {
+  if (!props.connection) return 'status-error'
   return props.connection.status === 1 ? 'status-normal' : 'status-error'
 })
 
 const statusText = computed(() => {
+  if (!props.connection) return '异常'
   return props.connection.status === 1 ? '正常' : '异常'
 })
 
 // 添加状态颜色计算
 const statusColor = computed(() => {
+  if (!props.connection) return '#ff4d4f'
   return props.connection.status === 1 ? '#52c41a' : '#ff4d4f'
 })
 

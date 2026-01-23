@@ -18,13 +18,16 @@ export const mockDelay = (delay = 300) => {
 
 /**
  * 模拟成功响应
+ * 与后端真实API格式保持一致
  * @param {*} data - 响应数据
  */
 export const mockSuccess = (data) => {
   return {
-    code: 200,
-    message: 'success',
-    data
+    code: 0,
+    message: '操作成功',
+    data,
+    timestamp: Date.now(),
+    traceId: 'mock_' + Math.random().toString(36).substr(2, 16)
   }
 }
 

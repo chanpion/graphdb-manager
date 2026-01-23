@@ -233,8 +233,8 @@ const requestInterceptors = {
 }
 
 // 应用拦截器到 axios
-requestInterceptors.request.forEach(handler => axiosRequest.interceptors.request.use(handler[0], handler[1]))
-requestInterceptors.response.forEach(handler => axiosRequest.interceptors.response.use(handler[0], handler[1]))
+axiosRequest.interceptors.request.use(requestInterceptors.request[0], requestInterceptors.request[1])
+axiosRequest.interceptors.response.use(requestInterceptors.response[0], requestInterceptors.response[1])
 
 /**
  * 创建请求函数

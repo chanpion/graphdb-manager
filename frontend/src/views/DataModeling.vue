@@ -416,7 +416,8 @@ const builtInProperties = [
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    connections.value = res.data || []
+    const data = res.data
+    connections.value = Array.isArray(data) ? data : []
     if (connections.value.length > 0 && !selectedConnectionId.value) {
       selectedConnectionId.value = connections.value[0].id
     }
