@@ -172,8 +172,7 @@ public class GraphService {
         config.setHost(dto.getHost());
         config.setPort(dto.getPort());
         config.setUsername(dto.getUsername());
-        // 密码需要从加密字段获取（这里暂时置空，实际使用时需解密）
-        config.setPassword("");
+        config.setPassword(dto.getPassword());
         config.setStorageBackend(dto.getStorageBackend());
         config.setStorageHost(dto.getStorageHost());
         config.setJsonParams(dto.getJsonParams());
@@ -644,5 +643,33 @@ public class GraphService {
         return instances.stream()
                 .map(GraphInstanceEntity::getGraphName)
                 .toList();
+    }
+    
+    /**
+     * 更新图实例信息
+     * @param connectionId 连接ID
+     * @param graphName 图名称
+     * @param updates 更新的字段
+     */
+    public void updateGraph(Long connectionId, String graphName, Map<String, Object> updates) {
+        // 查找现有的图实例
+        GraphInstanceEntity existing = graphInstanceMapper.selectByConnectionIdAndGraphName(connectionId, graphName);
+        if (existing == null) {
+            throw new RuntimeException("图实例不存在: " + graphName);
+        }
+        
+        // 更新可更新的字段
+        if (updates.containsKey("description")) {
+            existing.setDescription((String) updates.get("description"));
+        }
+        if (updates.containsKey("name")) {
+            existing.setGraphName((String) updates.get("name"));
+        }
+        if (updates.containsKey("status")) {
+            existing.setStatus(String.valueOf(updates.get("status")));
+        }
+
+        // 保存更新
+        graphInstanceMapper.updateById(existing);
     }
 }

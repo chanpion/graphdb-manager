@@ -94,13 +94,13 @@ export const useGraphStore = defineStore('graph', () => {
       error.value = '请先选择连接'
       return
     }
-    
+
     loading.value = true
     error.value = null
-    
+
     try {
       const res = await graphApi.list(selectedConnectionId.value, sourceType)
-      graphs.value = res.data || []
+      graphs.value = res || []
     } catch (err) {
       error.value = `加载图列表失败: ${err.message}`
       console.error('加载图列表失败:', err)
@@ -115,19 +115,19 @@ export const useGraphStore = defineStore('graph', () => {
   const loadAllGraphs = async (sourceType) => {
     loading.value = true
     error.value = null
-    
+
     try {
       // 获取所有连接（需要从连接API获取）
       const connectionRes = await graphApi.getConnections()
-      const allConnections = connectionRes.data || []
-      
+      const allConnections = connectionRes || []
+
       const allGraphs = []
-      
+
       // 遍历所有连接，加载每个连接的图
       for (const conn of allConnections) {
         try {
           const res = await graphApi.list(conn.id, sourceType)
-          const connGraphs = (res.data || []).map(graph => ({
+          const connGraphs = (res || []).map(graph => ({
             ...graph,
             connectionId: conn.id,
             connectionName: conn.name
@@ -138,7 +138,7 @@ export const useGraphStore = defineStore('graph', () => {
           // 继续加载其他连接的图
         }
       }
-      
+
       graphs.value = allGraphs
     } catch (err) {
       error.value = `加载所有图列表失败: ${err.message}`
@@ -157,14 +157,14 @@ export const useGraphStore = defineStore('graph', () => {
     if (!selectedConnectionId.value) {
       throw new Error('请先选择连接')
     }
-    
+
     error.value = null
-    
+
     try {
       const res = await graphApi.createGraph(selectedConnectionId.value, data)
       // 重新加载图列表
       await loadGraphs()
-      return res.data
+      return res
     } catch (err) {
       error.value = `创建图失败: ${err.message}`
       console.error('创建图失败:', err)
@@ -181,14 +181,14 @@ export const useGraphStore = defineStore('graph', () => {
     if (!selectedConnectionId.value) {
       throw new Error('请先选择连接')
     }
-    
+
     error.value = null
-    
+
     try {
       const res = await graphApi.deleteGraph(selectedConnectionId.value, graphName)
       // 重新加载图列表
       await loadGraphs()
-      return res.data
+      return res
     } catch (err) {
       error.value = `删除图失败: ${err.message}`
       console.error('删除图失败:', err)
@@ -205,14 +205,14 @@ export const useGraphStore = defineStore('graph', () => {
     if (!selectedConnectionId.value) {
       throw new Error('请先选择连接')
     }
-    
+
     error.value = null
-    
+
     try {
       const res = await graphApi.updateGraph(selectedConnectionId.value, data)
       // 重新加载图列表
       await loadGraphs()
-      return res.data
+      return res
     } catch (err) {
       error.value = `更新图失败: ${err.message}`
       console.error('更新图失败:', err)
@@ -229,12 +229,12 @@ export const useGraphStore = defineStore('graph', () => {
     if (!selectedConnectionId.value || !graphName) {
       throw new Error('请先选择连接和图')
     }
-    
+
     error.value = null
-    
+
     try {
       const res = await graphApi.getGraphSchema(selectedConnectionId.value, graphName)
-      return res.data
+      return res
     } catch (err) {
       error.value = `加载图Schema失败: ${err.message}`
       console.error('加载图Schema失败:', err)

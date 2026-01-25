@@ -100,7 +100,7 @@ export const useExportStore = defineStore('export', () => {
     
     try {
       const res = await graphApi.list(selectedConnectionId.value)
-      graphs.value = res.data || []
+      graphs.value = res || []
     } catch (err) {
       error.value = `加载图列表失败: ${err.message}`
       console.error('加载图列表失败:', err)
@@ -123,7 +123,7 @@ export const useExportStore = defineStore('export', () => {
     
     try {
       const res = await graphApi.listExportTasks(selectedConnectionId.value, selectedGraphName.value)
-      tasks.value = res.data || []
+      tasks.value = res || []
     } catch (err) {
       error.value = `加载导出任务失败: ${err.message}`
       console.error('加载导出任务失败:', err)
@@ -148,7 +148,7 @@ export const useExportStore = defineStore('export', () => {
       const res = await graphApi.createExportTask(selectedConnectionId.value, selectedGraphName.value, data)
       // 重新加载任务列表
       await loadTasks()
-      return res.data
+      return res
     } catch (err) {
       error.value = `创建导出任务失败: ${err.message}`
       console.error('创建导出任务失败:', err)
@@ -172,7 +172,7 @@ export const useExportStore = defineStore('export', () => {
       const res = await graphApi.deleteExportTask(selectedConnectionId.value, selectedGraphName.value, taskId)
       // 重新加载任务列表
       await loadTasks()
-      return res.data
+      return res
     } catch (err) {
       error.value = `删除导出任务失败: ${err.message}`
       console.error('删除导出任务失败:', err)
@@ -196,7 +196,7 @@ export const useExportStore = defineStore('export', () => {
       const res = await graphApi.cancelExportTask(selectedConnectionId.value, selectedGraphName.value, taskId)
       // 重新加载任务列表
       await loadTasks()
-      return res.data
+      return res
     } catch (err) {
       error.value = `取消导出任务失败: ${err.message}`
       console.error('取消导出任务失败:', err)

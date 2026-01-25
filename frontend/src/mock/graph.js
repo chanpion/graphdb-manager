@@ -122,7 +122,7 @@ export const mockCreateGraph = async (connectionId, data) => {
   await mockDelay()
   console.log(`Mock: 在连接 ${connectionId} 创建图`, data)
   const newGraph = {
-    name: data.graphName || `graph_${Date.now()}`,
+    graphName: data.graphName || `graph_${Date.now()}`,
     databaseType: 'NEO4J',
     vertexCount: 0,
     edgeCount: 0,
@@ -140,7 +140,7 @@ export const mockCreateGraph = async (connectionId, data) => {
 export const mockDeleteGraph = async (connectionId, graphName) => {
   await mockDelay()
   console.log(`Mock: 删除图 ${graphName}`)
-  const index = mockGraphs.findIndex(g => g.name === graphName)
+  const index = mockGraphs.findIndex(g => g.graphName === graphName)
   if (index === -1) {
     return mockError('图不存在', 404)
   }

@@ -222,7 +222,20 @@ const requestInterceptors = {
   ],
   response: [
     response => {
-      return response.data
+      const result = response.data
+      // 如果响应是 Result 对象格式，提取 data 字段
+      if (result && typeof result === 'object' && 'code' in result) {
+        if (result.code === 200) {
+          return result.data
+        } else {
+          // 处理业务错误
+          const message = result.message || '请求失败'
+          ElMessage.error(message)
+          return Promise.reject(new Error(message))
+        }
+      }
+      // 如果不是 Result 对象格式，直接返回
+      return result
     },
     error => {
       const message = error.response?.data?.message || error.message || '请求失败'
@@ -237,6 +250,27 @@ axiosRequest.interceptors.request.use(requestInterceptors.request[0], requestInt
 axiosRequest.interceptors.response.use(requestInterceptors.response[0], requestInterceptors.response[1])
 
 /**
+ * 响应处理器
+ * 统一处理响应数据，提取 Result.data
+ */
+const responseHandler = (response) => {
+  const result = response.data || response
+  // 如果响应是 Result 对象格式，提取 data 字段
+  if (result && typeof result === 'object' && 'code' in result) {
+    if (result.code === 200) {
+      return result.data
+    } else {
+      // 处理业务错误
+      const message = result.message || '请求失败'
+      ElMessage.error(message)
+      return Promise.reject(new Error(message))
+    }
+  }
+  // 如果不是 Result 对象格式，直接返回
+  return result
+}
+
+/**
  * 创建请求函数
  * 根据配置决定使用 Mock 数据还是真实请求
  */
@@ -244,10 +278,11 @@ const request = async (config) => {
   const currentConfig = getApiConfig()
 
   if (currentConfig.useMock) {
-    // Mock 模式：返回 Mock 数据
-    return mockHandler(config)
+    // Mock 模式：返回 Mock 数据并经过响应处理
+    const mockResponse = await mockHandler(config)
+    return responseHandler({ data: mockResponse })
   } else {
-    // 真实模式：发送真实请求
+    // 真实模式：发送真实请求（响应拦截器已处理）
     return axiosRequest(config)
   }
 }

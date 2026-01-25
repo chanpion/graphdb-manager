@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `connection_config` (
     `host` varchar(100) NOT NULL COMMENT '主机地址',
     `port` int NOT NULL COMMENT '端口号',
     `username` varchar(100) DEFAULT NULL COMMENT '用户名',
-    `password_encrypted` varchar(500) DEFAULT NULL COMMENT '加密后的密码',
+    `password` varchar(500) DEFAULT NULL COMMENT '密码',
     `database_name` varchar(100) DEFAULT NULL COMMENT '数据库名/图空间',
     `storage_type` varchar(20) DEFAULT NULL COMMENT '存储类型（仅JANUS）：HBASE/CASSANDRA',
     `storage_config` text DEFAULT NULL COMMENT '存储配置参数（仅JANUS）',

@@ -91,7 +91,7 @@ export const useSchemaStore = defineStore('schema', () => {
     
     try {
       const res = await graphApi.list(selectedConnectionId.value)
-      graphs.value = res.data || []
+      graphs.value = res || []
     } catch (err) {
       error.value = `加载图列表失败: ${err.message}`
       console.error('加载图列表失败:', err)
@@ -123,7 +123,7 @@ export const useSchemaStore = defineStore('schema', () => {
     
     try {
       const res = await graphApi.getVertexTypes(selectedConnectionId.value, selectedGraphName.value)
-      vertexTypes.value = res.data || []
+      vertexTypes.value = res || []
     } catch (err) {
       error.value = `加载点类型失败: ${err.message}`
       console.error('加载点类型失败:', err)
@@ -143,7 +143,7 @@ export const useSchemaStore = defineStore('schema', () => {
     
     try {
       const res = await graphApi.getEdgeTypes(selectedConnectionId.value, selectedGraphName.value)
-      edgeTypes.value = res.data || []
+      edgeTypes.value = res || []
     } catch (err) {
       error.value = `加载边类型失败: ${err.message}`
       console.error('加载边类型失败:', err)
@@ -168,7 +168,7 @@ export const useSchemaStore = defineStore('schema', () => {
       const res = await graphApi.createVertexType(selectedConnectionId.value, selectedGraphName.value, data)
       // 重新加载点类型列表
       await loadVertexTypes()
-      return res.data
+      return res
     } catch (err) {
       error.value = `创建点类型失败: ${err.message}`
       console.error('创建点类型失败:', err)
@@ -192,7 +192,7 @@ export const useSchemaStore = defineStore('schema', () => {
       const res = await graphApi.createEdgeType(selectedConnectionId.value, selectedGraphName.value, data)
       // 重新加载边类型列表
       await loadEdgeTypes()
-      return res.data
+      return res
     } catch (err) {
       error.value = `创建边类型失败: ${err.message}`
       console.error('创建边类型失败:', err)
@@ -216,7 +216,7 @@ export const useSchemaStore = defineStore('schema', () => {
       const res = await graphApi.deleteVertexType(selectedConnectionId.value, selectedGraphName.value, labelName)
       // 重新加载点类型列表
       await loadVertexTypes()
-      return res.data
+      return res
     } catch (err) {
       error.value = `删除点类型失败: ${err.message}`
       console.error('删除点类型失败:', err)
@@ -240,7 +240,7 @@ export const useSchemaStore = defineStore('schema', () => {
       const res = await graphApi.deleteEdgeType(selectedConnectionId.value, selectedGraphName.value, labelName)
       // 重新加载边类型列表
       await loadEdgeTypes()
-      return res.data
+      return res
     } catch (err) {
       error.value = `删除边类型失败: ${err.message}`
       console.error('删除边类型失败:', err)

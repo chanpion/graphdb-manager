@@ -416,8 +416,7 @@ const builtInProperties = [
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    const data = res.data
-    connections.value = Array.isArray(data) ? data : []
+    connections.value = Array.isArray(res) ? res : []
     if (connections.value.length > 0 && !selectedConnectionId.value) {
       selectedConnectionId.value = connections.value[0].id
     }
@@ -433,7 +432,7 @@ const loadVertexTypes = async () => {
   vertexLoading.value = true
   try {
     const res = await graphApi.getVertexTypes(selectedConnectionId.value, selectedGraphName.value)
-    vertexTypes.value = res.data || []
+    vertexTypes.value = res || []
   } catch (error) {
     console.error('加载点类型列表失败:', error)
     ElMessage.error('加载点类型列表失败')
@@ -448,7 +447,7 @@ const loadEdgeTypes = async () => {
   edgeLoading.value = true
   try {
     const res = await graphApi.getEdgeTypes(selectedConnectionId.value, selectedGraphName.value)
-    edgeTypes.value = res.data || []
+    edgeTypes.value = res || []
   } catch (error) {
     console.error('加载边类型列表失败:', error)
     ElMessage.error('加载边类型列表失败')
@@ -463,7 +462,7 @@ const loadIndexes = async () => {
   indexLoading.value = true
   try {
     const res = await graphApi.listIndexes(selectedConnectionId.value, selectedGraphName.value)
-    indexes.value = res.data || []
+    indexes.value = res || []
   } catch (error) {
     console.error('加载索引列表失败:', error)
     ElMessage.error('加载索引列表失败')

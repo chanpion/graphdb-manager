@@ -88,7 +88,15 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
     }
     
     private Driver createDriver(ConnectionConfig config) {
-        String uri = "bolt://" + config.getHost() + ":" + config.getPort();
+        // Neo4j Java驱动仅支持Bolt协议，不支持HTTP协议
+        // 如果用户使用了HTTP端口，给出清晰的错误提示
+        if (config.getPort() == 7474 || config.getPort() == 7473) {
+            throw new CoreException("检测到您正在使用Neo4j HTTP端口（" + config.getPort() + "），请使用Bolt协议端口（通常是7687）进行连接。\n" +
+                    "Neo4j Java驱动仅支持Bolt协议，不支持HTTP(S)协议。\n" +
+                    "如果您使用的是Neo4j社区版，默认Bolt端口为7687，HTTP端口为7474。");
+        }
+        
+        String uri = "neo4j://" + config.getHost() + ":" + config.getPort();
         AuthToken auth = AuthTokens.basic(config.getUsername(), config.getPassword());
         return GraphDatabase.driver(uri, auth);
     }

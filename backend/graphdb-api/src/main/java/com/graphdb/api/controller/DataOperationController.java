@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @Tag(name = "数据操作", description = "图数据节点和边操作API")
 @RestController
-@RequestMapping("/api/v1/connections/{connectionId}/graphs/{graphName}")
+@RequestMapping("/api/v1/connections/{connectionId}/graphs/{graphName}/data")
 @CrossOrigin
 public class DataOperationController {
     

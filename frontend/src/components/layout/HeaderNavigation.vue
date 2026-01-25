@@ -35,12 +35,12 @@
             clearable
             style="width: 200px;"
             @change="handleGraphChange"
-            value-key="name"
+            value-key="graphName"
           >
             <el-option
               v-for="graph in graphs"
-              :key="graph.name"
-              :label="graph.name"
+              :key="graph.graphName"
+              :label="graph.graphName"
               :value="graph"
             />
           </el-select>
@@ -107,13 +107,13 @@ const selectedGraph = computed({
   get: () => {
     // 从 graphs 中找到当前选中的图对象
     if (!selectedGraphName.value) return ''
-    return graphs.value.find(g => g.name === selectedGraphName.value) || selectedGraphName.value
+    return graphs.value.find(g => g.graphName === selectedGraphName.value) || selectedGraphName.value
   },
   set: (value) => {
     if (value && typeof value === 'object') {
       // 如果是对象，设置 connectionId 和 graphName
       selectedConnectionId.value = value.connectionId || ''
-      selectedGraphName.value = value.name || ''
+      selectedGraphName.value = value.graphName || ''
     } else {
       // 如果是字符串（兼容旧值）
       selectedGraphName.value = value
@@ -185,15 +185,15 @@ const handleTabRefresh = (tabId) => {
 
 // 处理图变更
 const handleGraphChange = (graph) => {
-  
+
   if (graph && typeof graph === 'object') {
     // 设置连接ID和图名称
     selectedConnectionId.value = graph.connectionId || ''
-    selectedGraphName.value = graph.name || ''
-    
+    selectedGraphName.value = graph.graphName || ''
+
     // 加载图数据
-    if (graph.name && graph.connectionId) {
-      graphStore.loadGraphSchema(graph.name).catch(err => {
+    if (graph.graphName && graph.connectionId) {
+      graphStore.loadGraphSchema(graph.graphName).catch(err => {
         console.error('加载图Schema失败:', err)
       })
     }

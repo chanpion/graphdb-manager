@@ -255,8 +255,7 @@ const edgeTypeRules = {
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    const data = res.data
-    connections.value = Array.isArray(data) ? data : []
+    connections.value = Array.isArray(res) ? res : []
     if (connections.value.length > 0 && !selectedConnectionId.value) {
       selectedConnectionId.value = connections.value[0].id
     }

@@ -629,10 +629,8 @@ async function loadVertexLabels() {
   if (!isMounted.value || !selectedGraphName.value || !selectedConnectionId.value) return
   try {
     const res = await graphApi.getVertexTypes(selectedConnectionId.value, selectedGraphName.value)
-    if (res.code === 200 && isMounted.value) {
-      vertexLabels.value = res.data || []
-    } else if (isMounted.value) {
-      ElMessage.error('加载节点类型失败: ' + res.message)
+    if (isMounted.value) {
+      vertexLabels.value = res || []
     }
   } catch (error) {
     if (isMounted.value) {
@@ -645,10 +643,8 @@ async function loadEdgeLabels() {
   if (!isMounted.value || !selectedGraphName.value || !selectedConnectionId.value) return
   try {
     const res = await graphApi.getEdgeTypes(selectedConnectionId.value, selectedGraphName.value)
-    if (res.code === 200 && isMounted.value) {
-      edgeLabels.value = res.data || []
-    } else if (isMounted.value) {
-      ElMessage.error('加载边类型失败: ' + res.message)
+    if (isMounted.value) {
+      edgeLabels.value = res || []
     }
   } catch (error) {
     if (isMounted.value) {
@@ -672,11 +668,9 @@ async function loadVertices() {
       }
     )
 
-    if (res.code === 200 && isMounted.value) {
-      vertices.value = res.data?.list || []
-      vertexTotal.value = res.data?.total || vertices.value.length
-    } else if (isMounted.value) {
-      ElMessage.error('查询节点失败: ' + res.message)
+    if (isMounted.value) {
+      vertices.value = res?.list || []
+      vertexTotal.value = res?.total || vertices.value.length
     }
   } catch (error) {
     if (isMounted.value) {
@@ -704,11 +698,9 @@ async function loadEdges() {
       }
     )
 
-    if (res.code === 200 && isMounted.value) {
-      edges.value = res.data?.list || []
-      edgeTotal.value = res.data?.total || edges.value.length
-    } else if (isMounted.value) {
-      ElMessage.error('查询边失败: ' + res.message)
+    if (isMounted.value) {
+      edges.value = res?.list || []
+      edgeTotal.value = res?.total || edges.value.length
     }
   } catch (error) {
     if (isMounted.value) {
@@ -821,13 +813,9 @@ async function saveVertex() {
       )
     }
 
-    if (res.code === 200) {
-      ElMessage.success(vertexForm.value.uid ? '节点更新成功' : '节点创建成功')
-      vertexDialogVisible.value = false
-      loadVertices()
-    } else {
-      ElMessage.error('操作失败: ' + res.message)
-    }
+    ElMessage.success(vertexForm.value.uid ? '节点更新成功' : '节点创建成功')
+    vertexDialogVisible.value = false
+    loadVertices()
   } catch (error) {
     ElMessage.error('操作失败: ' + error.message)
   }
@@ -845,12 +833,8 @@ async function deleteVertex(uid) {
     })
 
     const res = await dataApi.deleteVertex(selectedConnectionId.value, selectedGraphName.value, uid)
-    if (res.code === 200) {
-      ElMessage.success('节点删除成功')
-      loadVertices()
-    } else {
-      ElMessage.error('删除失败: ' + res.message)
-    }
+    ElMessage.success('节点删除成功')
+    loadVertices()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败: ' + error.message)
@@ -932,13 +916,9 @@ async function saveEdge() {
       )
     }
 
-    if (res.code === 200) {
-      ElMessage.success(edgeForm.value.uid ? '边更新成功' : '边创建成功')
-      edgeDialogVisible.value = false
-      loadEdges()
-    } else {
-      ElMessage.error('操作失败: ' + res.message)
-    }
+    ElMessage.success(edgeForm.value.uid ? '边更新成功' : '边创建成功')
+    edgeDialogVisible.value = false
+    loadEdges()
   } catch (error) {
     ElMessage.error('操作失败: ' + error.message)
   }
@@ -956,12 +936,8 @@ async function deleteEdge(uid) {
     })
 
     const res = await dataApi.deleteEdge(selectedConnectionId.value, selectedGraphName.value, uid)
-    if (res.code === 200) {
-      ElMessage.success('边删除成功')
-      loadEdges()
-    } else {
-      ElMessage.error('删除失败: ' + res.message)
-    }
+    ElMessage.success('边删除成功')
+    loadEdges()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败: ' + error.message)
@@ -1217,18 +1193,14 @@ async function importData() {
       selectedFile.value
     )
 
-    if (res.code === 200) {
-      ElMessage.success(`数据导入成功! 共导入 ${res.data?.total || 0} 条记录`)
-      importDialogVisible.value = false
-      
-      // 刷新当前数据
-      if (importForm.value.dataType === 'vertex') {
-        loadVertices()
-      } else {
-        loadEdges()
-      }
+    ElMessage.success(`数据导入成功! 共导入 ${res?.total || 0} 条记录`)
+    importDialogVisible.value = false
+
+    // 刷新当前数据
+    if (importForm.value.dataType === 'vertex') {
+      loadVertices()
     } else {
-      ElMessage.error('导入失败: ' + res.message)
+      loadEdges()
     }
   } catch (error) {
     ElMessage.error('导入失败: ' + error.message)

@@ -1,16 +1,16 @@
 -- 图数据库管理系统初始化数据
 
 -- 插入默认连接配置数据
-INSERT IGNORE INTO `connection_config` (`id`, `name`, `type`, `host`, `port`, `username`, `description`, `status`, `created_by`) VALUES
-(1, '本地Neo4j测试', 'NEO4J', 'localhost', 7474, 'neo4j', '本地Neo4j数据库测试连接', 1,  'system'),
-(2, '本地Nebula测试', 'NEBULA', 'localhost', 9669, 'root', '本地NebulaGraph数据库测试连接', 0, 'system'),
-(3, '本地Janus测试', 'JANUS', 'localhost', 8182, '', '本地JanusGraph数据库测试连接', 0, 'system');
+INSERT IGNORE INTO `connection_config` (`id`, `name`, `type`, `host`, `port`, `username`, `password`, `description`, `status`, `created_by`) VALUES
+(1, '本地Neo4j测试', 'NEO4J', 'localhost', 7687, 'neo4j', 'neo4j123','本地Neo4j数据库测试连接', 1,  'system'),
+(2, '本地Nebula测试', 'NEBULA', 'localhost', 9669, 'root', '','本地NebulaGraph数据库测试连接', 0, 'system'),
+(3, '本地Janus测试', 'JANUS', 'localhost', 8182, '', '','本地JanusGraph数据库测试连接', 0, 'system');
 
 -- 插入默认图实例数据
 INSERT IGNORE INTO `graph_instance` (`id`, `connection_id`, `graph_name`, `database_type`, `vertex_count`, `edge_count`, `description`, `is_default`, `source_type`) VALUES
-(1, 1, '默认图', 'NEO4J', 0, 0, 'Neo4j默认图实例', 1, 'PLATFORM'),
-(2, 2, '默认图空间', 'NEBULA', 0, 0, 'NebulaGraph默认图空间', 0, 'PLATFORM'),
-(3, 3, '默认图', 'JANUS', 0, 0, 'JanusGraph默认图实例', 0, 'PLATFORM');
+(1, 1, 'Neo4j', 'NEO4J', 0, 0, 'Neo4j默认图实例', 1, 'PLATFORM'),
+(2, 2, 'Nebula', 'NEBULA', 0, 0, 'NebulaGraph默认图空间', 0, 'PLATFORM'),
+(3, 3, 'Janus', 'JANUS', 0, 0, 'JanusGraph默认图实例', 0, 'PLATFORM');
 
 -- 插入查询历史示例数据
 INSERT IGNORE INTO `query_history` (`id`, `connection_id`, `graph_instance_id`, `query`, `execution_time_ms`, `result_count`, `status`, `executed_at`, `created_by`) VALUES

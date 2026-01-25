@@ -49,9 +49,9 @@ public class ConnectionEntity {
     private String username;
     
     /**
-     * 加密后的密码
+     * 密码
      */
-    private String passwordEncrypted;
+    private String password;
     
     /**
      * 数据库名/图空间

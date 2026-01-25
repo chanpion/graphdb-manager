@@ -192,7 +192,7 @@ const loadIndexes = async () => {
   loading.value = true
   try {
     const res = await graphApi.listIndexes(props.selectedConnectionId, props.selectedGraphName)
-    indexes.value = res.data || []
+    indexes.value = res || []
   } catch (error) {
     console.error('加载索引列表失败:', error)
     ElMessage.error('加载索引列表失败')

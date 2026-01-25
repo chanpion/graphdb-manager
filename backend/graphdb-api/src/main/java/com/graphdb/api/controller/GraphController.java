@@ -208,4 +208,21 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 更新图
+     */
+    @Operation(summary = "更新图", description = "更新指定图的信息")
+    @PutMapping("/{graphName}")
+    public Result<Void> update(
+            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "图名称", required = true) @PathVariable String graphName,
+            @RequestBody Map<String, Object> request) {
+        try {
+            graphService.updateGraph(connectionId, graphName, request);
+            return Result.success(null);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }

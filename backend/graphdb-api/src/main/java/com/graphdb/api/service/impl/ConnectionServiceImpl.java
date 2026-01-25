@@ -85,9 +85,9 @@ public class ConnectionServiceImpl implements ConnectionService {
         entity.setUpdatedAt(LocalDateTime.now());
         entity.setDeleted(0);
         
-        // 密码加密（简单Base64编码，实际项目应使用加密算法）
+        // 直接存储密码（不再加密）
         if (configDTO.getPassword() != null) {
-            entity.setPasswordEncrypted(Base64.getEncoder().encodeToString(configDTO.getPassword().getBytes()));
+            entity.setPassword(configDTO.getPassword());
         }
         
         connectionMapper.insert(entity);
@@ -123,7 +123,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         entity.setHost(configDTO.getHost());
         entity.setPort(configDTO.getPort());
         entity.setUsername(configDTO.getUsername());
-        // 映射DTO字段到Entity字段
+        // 映射DTO字段到Entity字段（注意字段名不一致）
         entity.setStorageType(configDTO.getStorageBackend());
         entity.setStorageConfig(configDTO.getStorageConfig());
         entity.setExtraParams(configDTO.getJsonParams());
@@ -131,9 +131,9 @@ public class ConnectionServiceImpl implements ConnectionService {
 
         entity.setUpdatedAt(LocalDateTime.now());
         
-        // 如果提供了新密码，则更新加密密码
+        // 如果提供了新密码，则更新密码
         if (configDTO.getPassword() != null && !configDTO.getPassword().isEmpty()) {
-            entity.setPasswordEncrypted(Base64.getEncoder().encodeToString(configDTO.getPassword().getBytes()));
+            entity.setPassword(configDTO.getPassword());
         }
         
         connectionMapper.updateById(entity);
@@ -160,10 +160,10 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionConfigDTO configDTO = getById(id);
         ConnectionConfig config = convertDTOToModel(configDTO);
         
-        // 从配置中获取密码明文（需要解密）
-        String encrypted = connectionMapper.selectById(id).getPasswordEncrypted();
-        if (encrypted != null && !encrypted.isEmpty()) {
-            config.setPassword(new String(Base64.getDecoder().decode(encrypted)));
+        // 直接获取密码
+        String password = connectionMapper.selectById(id).getPassword();
+        if (password != null) {
+            config.setPassword(password);
         }
         
         // 通过GraphService调用适配器进行测试
@@ -198,10 +198,10 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionConfig config = convertDTOToModel(configDTO);
         config.setType(databaseType);
         
-        // 解密密码
-        String encrypted = connectionMapper.selectById(id).getPasswordEncrypted();
-        if (encrypted != null && !encrypted.isEmpty()) {
-            config.setPassword(new String(Base64.getDecoder().decode(encrypted)));
+        // 直接获取密码
+        String password = connectionMapper.selectById(id).getPassword();
+        if (password != null) {
+            config.setPassword(password);
         }
         
         DatabaseTypeEnum dbType = DatabaseTypeEnum.fromCode(databaseType);
@@ -231,12 +231,10 @@ public class ConnectionServiceImpl implements ConnectionService {
         dto.setHost(entity.getHost());
         dto.setPort(entity.getPort());
         dto.setUsername(entity.getUsername());
-        // 密码字段不填充（Write Only）
-        // 映射Entity字段到DTO字段
+        dto.setPassword(entity.getPassword());
         dto.setStorageBackend(entity.getStorageType());
         dto.setStorageConfig(entity.getStorageConfig());
         dto.setJsonParams(entity.getExtraParams());
-        // 同时设置Entity字段（用于反向映射）
         dto.setStorageType(entity.getStorageType());
         dto.setExtraParams(entity.getExtraParams());
         dto.setStatus(entity.getStatus());
@@ -256,7 +254,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         entity.setHost(dto.getHost());
         entity.setPort(dto.getPort());
         entity.setUsername(dto.getUsername());
-        // 密码加密在service中处理
+        // 直接存储密码
         // 映射DTO字段到Entity字段
         entity.setStorageType(dto.getStorageBackend());
         entity.setStorageConfig(dto.getStorageConfig());
@@ -278,8 +276,7 @@ public class ConnectionServiceImpl implements ConnectionService {
         config.setHost(dto.getHost());
         config.setPort(dto.getPort());
         config.setUsername(dto.getUsername());
-        // 密码需要从加密字段获取
-        // 映射DTO字段到Model字段
+        config.setPassword(dto.getPassword());
         config.setStorageBackend(dto.getStorageBackend());
         config.setStorageHost(dto.getStorageHost());
         config.setJsonParams(dto.getJsonParams());

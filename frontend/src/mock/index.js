@@ -23,7 +23,7 @@ export const mockDelay = (delay = 300) => {
  */
 export const mockSuccess = (data) => {
   return {
-    code: 0,
+    code: 200,
     message: '操作成功',
     data,
     timestamp: Date.now(),

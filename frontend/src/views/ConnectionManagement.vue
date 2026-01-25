@@ -291,9 +291,8 @@ const loadDefaultParams = () => {
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    // 确保 data 是数组
-    const data = res.data
-    connections.value = Array.isArray(data) ? data : []
+    // 响应拦截器已自动提取 Result.data，res 直接是数组
+    connections.value = Array.isArray(res) ? res : []
   } catch (error) {
     console.error('加载连接列表失败:', error)
   }

@@ -263,7 +263,8 @@ const createForm = reactive({
 const editForm = reactive({
   graphName: '',
   description: '',
-  originalGraphName: ''
+  originalGraphName: '',
+  connectionId: ''
 })
 
 // 使用storeToRefs正确解构store
@@ -322,8 +323,7 @@ const resetPagination = () => {
 const loadConnections = async () => {
   try {
     const res = await connectionApi.list()
-    const data = res.data
-    connections.value = Array.isArray(data) ? data : []
+    connections.value = Array.isArray(res) ? res : []
     // 默认不选择任何连接，显示全部连接的图
     if (connections.value.length > 0 && selectedConnectionId.value === undefined) {
       selectedConnectionId.value = ''
@@ -376,13 +376,26 @@ const handleUpdateEdit = async () => {
   
   editing.value = true
   try {
-    // 这里需要调用更新图的API，传递图名称和描述
-    // 暂时使用模拟方式
+    // 使用图所属的连接ID进行更新
+    const connectionId = editForm.connectionId
+    if (!connectionId) {
+      throw new Error('无法确定图所属的连接')
+    }
+    
+    // 临时设置选中的连接ID
+    const originalConnectionId = selectedConnectionId.value
+    selectedConnectionId.value = connectionId
+    
+    // 调用更新图API
     await graphStore.updateGraph({
       oldGraphName: editForm.originalGraphName,
       newGraphName: editForm.graphName,
       description: editForm.description
     })
+    
+    // 恢复原始连接ID
+    selectedConnectionId.value = originalConnectionId
+    
     ElMessage.success('图信息更新成功')
     editDialogVisible.value = false
     // 刷新图列表
@@ -449,11 +462,13 @@ const handleEdit = (graphData) => {
   const graph = typeof graphData === 'string' ? { name: graphData } : graphData
   const graphName = graph?.name
   const description = graph?.description || ''
+  const connectionId = graph?.connectionId || ''
   
   // 设置编辑表单的值
   editForm.graphName = graphName || ''
   editForm.description = description
   editForm.originalGraphName = graphName || ''
+  editForm.connectionId = connectionId
   
   // 打开编辑对话框
   editDialogVisible.value = true
