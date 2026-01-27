@@ -669,8 +669,9 @@ async function loadVertices() {
     )
 
     if (isMounted.value) {
-      vertices.value = res?.list || []
-      vertexTotal.value = res?.total || vertices.value.length
+      // 根据API返回的数据结构调整：res.data 是数组，没有分页信息
+      vertices.value = Array.isArray(res) ? res : (res?.data || [])
+      vertexTotal.value = vertices.value.length
     }
   } catch (error) {
     if (isMounted.value) {
@@ -699,8 +700,9 @@ async function loadEdges() {
     )
 
     if (isMounted.value) {
-      edges.value = res?.list || []
-      edgeTotal.value = res?.total || edges.value.length
+      // 根据API返回的数据结构调整：res.data 是数组，没有分页信息
+      edges.value = Array.isArray(res) ? res : (res?.data || [])
+      edgeTotal.value = edges.value.length
     }
   } catch (error) {
     if (isMounted.value) {
@@ -1145,45 +1147,19 @@ async function importData() {
 
   // 构建导入配置，包含字段映射信息
   const config = {
-    dataType: importForm.value.dataType,
-    overwrite: importForm.value.overwrite,
+    delimiter: importForm.value.delimiter,
     hasHeader: importForm.value.hasHeader,
-    delimiter: importForm.value.delimiter
+    encoding: 'UTF-8',
+    idField: fieldMapping.value.uid,
+    labelField: fieldMapping.value.label,
+    sourceField: fieldMapping.value.sourceUid,
+    targetField: fieldMapping.value.targetUid,
+    importMode: importForm.value.dataType === 'vertex' ? 'VERTICES_ONLY' : 'EDGES_ONLY',
+    batchSize: 1000,
+    fieldMapping: fieldMapping.value
   }
   
-  // 添加字段映射配置
-  if (Object.keys(fieldMapping.value).length > 0) {
-    config.fieldMapping = fieldMapping.value
-    
-    // 设置映射的字段
-    if (fieldMapping.value.uid) {
-      config.idField = fieldMapping.value.uid
-    }
-    if (fieldMapping.value.label) {
-      config.labelField = fieldMapping.value.label
-    }
-    if (fieldMapping.value.sourceUid) {
-      config.sourceField = fieldMapping.value.sourceUid
-    }
-    if (fieldMapping.value.targetUid) {
-      config.targetField = fieldMapping.value.targetUid
-    }
-    
-    // 处理属性字段映射
-    const propertyMappings = Object.keys(fieldMapping.value).filter(key => 
-      key.startsWith('property_') && fieldMapping.value[key]
-    )
-    if (propertyMappings.length > 0) {
-      config.propertyMappings = {}
-      propertyMappings.forEach(propKey => {
-        config.propertyMappings[propKey.replace('property_', '')] = fieldMapping.value[propKey]
-      })
-    }
-  }
-  
-  if (importForm.value.label) {
-    config.label = importForm.value.label
-  }
+
 
   try {
     const res = await dataApi.importCsv(

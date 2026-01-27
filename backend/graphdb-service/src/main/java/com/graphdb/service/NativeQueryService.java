@@ -1,5 +1,6 @@
 package com.graphdb.service;
 
+import com.graphdb.core.model.GraphQueryResult;
 import java.util.List;
 import java.util.Map;
 

@@ -1,5 +1,6 @@
 package com.graphdb.service.impl;
 
+import com.graphdb.core.model.GraphQueryResult;
 import com.graphdb.service.NativeQueryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

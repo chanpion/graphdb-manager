@@ -4,6 +4,7 @@ import com.graphdb.core.constant.DatabaseTypeEnum;
 import com.graphdb.core.model.ConnectionConfig;
 import com.graphdb.core.model.GraphSchema;
 import com.graphdb.core.model.LabelType;
+import com.graphdb.core.model.GraphQueryResult;
 import com.graphdb.core.exception.CoreException;
 import java.util.List;
 
@@ -138,9 +139,9 @@ public interface GraphAdapter {
      * @param graphName 图名称
      * @param queryLanguage 查询语言（如Cypher, Gremlin, nGQL）
      * @param queryStatement 查询语句
-     * @return 查询结果
+     * @return 查询结果，包含转换后的Vertex和Edge对象
      * @throws CoreException 查询异常
      */
-    Object executeNativeQuery(ConnectionConfig config, String graphName, 
+    GraphQueryResult executeNativeQuery(ConnectionConfig config, String graphName, 
                              String queryLanguage, String queryStatement) throws CoreException;
 }

@@ -1,18 +1,19 @@
 package com.graphdb.adapter;
 
+import com.graphdb.core.constant.DatabaseTypeEnum;
+import com.graphdb.core.exception.CoreException;
+import com.graphdb.core.interfaces.DataHandler;
 import com.graphdb.core.interfaces.GraphAdapter;
 import com.graphdb.core.interfaces.SchemaHandler;
-import com.graphdb.core.interfaces.DataHandler;
-import com.graphdb.core.constant.DatabaseTypeEnum;
 import com.graphdb.core.model.ConnectionConfig;
+import com.graphdb.core.model.CsvImportConfig;
+import com.graphdb.core.model.GraphQueryResult;
 import com.graphdb.core.model.GraphSchema;
 import com.graphdb.core.model.LabelType;
-import com.graphdb.core.model.CsvImportConfig;
-import com.graphdb.core.exception.CoreException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.groovy.jsr223.GremlinGroovyScriptEngine;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
+import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
@@ -20,11 +21,11 @@ import org.janusgraph.core.schema.JanusGraphManagement;
 import org.springframework.stereotype.Service;
 
 import javax.script.ScriptException;
-import java.util.Map;
-import java.util.List;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JanusGraph适配器实现
@@ -793,77 +794,173 @@ public class JanusAdapter implements GraphAdapter, SchemaHandler, DataHandler {
     }
 
     @Override
-    public Object executeNativeQuery(ConnectionConfig config, String graphName,
-                                     String queryLanguage, String queryStatement) throws CoreException {
+    public GraphQueryResult executeNativeQuery(ConnectionConfig config, String graphName,
+                                               String queryLanguage, String queryStatement) throws CoreException {
         if (!isConnected()) {
             connect(config);
         }
 
+        GraphQueryResult result = new GraphQueryResult();
+
         try {
             // 验证查询语言
-            if (!"Gremlin".equalsIgnoreCase(queryLanguage)) {
+            if (!"Gremlin".equalsIgnoreCase(queryLanguage) && !"GREMLIN".equalsIgnoreCase(queryLanguage)) {
                 throw new CoreException("JanusGraph只支持Gremlin查询语言");
             }
             if (StringUtils.isBlank(queryStatement)) {
-                log.info("Gremlin query is blank, returning empty GraphData");
-                throw new CoreException("Gremlin query is blank");
-            }
-            org.janusgraph.core.JanusGraphTransaction tx = graph.newTransaction();
-
-            // 执行Gremlin查询
-            // 注意：JanusGraph不直接支持字符串Gremlin查询，需要使用Traversal API
-            Object result;
-            try {
-                result = tx.traversal().V().toList(); // 简单示例，实际实现需要解析查询语句
-            } finally {
-                tx.rollback();
+                log.info("Gremlin query is blank, returning empty result");
+                return result;
             }
 
+            // 使用Gremlin脚本引擎执行查询
             GremlinGroovyScriptEngine engine = new GremlinGroovyScriptEngine();
             engine.put("graph", graph);
             engine.put("g", graph.traversal());
+
+            Object queryResult;
             try {
-                result = engine.eval(queryStatement);
+                queryResult = engine.eval(queryStatement);
             } catch (ScriptException e) {
-                log.error("Error executing Gremlin query: {}", queryStatement, e);
+                throw new CoreException("Gremlin脚本执行失败: " + e.getMessage(), e);
             } finally {
-                graph.tx().rollback();
-            }
-            // 处理查询结果
-            List<Map<String, Object>> rows = new ArrayList<>();
-
-            // 简化处理，实际需要更复杂的类型检查和转换
-            if (result instanceof org.apache.tinkerpop.gremlin.structure.Vertex) {
-                org.apache.tinkerpop.gremlin.structure.Vertex vertex = (org.apache.tinkerpop.gremlin.structure.Vertex) result;
-                Map<String, Object> row = new HashMap<>();
-                row.put("vertex_id", vertex.id());
-                row.put("vertex_label", vertex.label());
-                rows.add(row);
-            } else if (result instanceof org.apache.tinkerpop.gremlin.structure.Edge) {
-                org.apache.tinkerpop.gremlin.structure.Edge edge = (org.apache.tinkerpop.gremlin.structure.Edge) result;
-                Map<String, Object> row = new HashMap<>();
-                row.put("edge_id", edge.id());
-                row.put("edge_label", edge.label());
-                rows.add(row);
-            } else {
-                // 处理其他类型的查询结果
-                Map<String, Object> row = new HashMap<>();
-                row.put("result", result);
-                rows.add(row);
+                graph.tx().rollback(); // 只读事务，回滚
             }
 
-            tx.rollback(); // 只读事务，回滚
+            // 处理查询结果，提取节点和边
+            List<com.graphdb.core.model.Vertex> vertices = new ArrayList<>();
+            List<com.graphdb.core.model.Edge> edges = new ArrayList<>();
 
-            Map<String, Object> queryResult = new HashMap<>();
-            queryResult.put("success", true);
-            queryResult.put("rows", rows);
-            queryResult.put("rowCount", rows.size());
-            queryResult.put("queryLanguage", "Gremlin");
+            extractGremlinGraphElements(queryResult, vertices, edges);
 
-            return queryResult;
+            // 设置结果
+            result.setVertices(vertices);
+            result.setEdges(edges);
+
+            // 设置统计信息
+            GraphQueryResult.QueryStatistics stats = new GraphQueryResult.QueryStatistics();
+            stats.setResultRows(vertices.size() + edges.size());
+            stats.setStatus("SUCCESS");
+            result.setStatistics(stats);
+
+            return result;
+
         } catch (Exception e) {
+            // 设置错误信息
+            GraphQueryResult.QueryStatistics stats = new GraphQueryResult.QueryStatistics();
+            stats.setStatus("ERROR");
+            stats.setErrorMessage(e.getMessage());
+            result.setStatistics(stats);
+
             throw new CoreException("执行JanusGraph原生查询失败: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 从Gremlin查询结果中提取图元素（节点和边）
+     */
+    private void extractGremlinGraphElements(Object queryResult, List<com.graphdb.core.model.Vertex> vertices, List<com.graphdb.core.model.Edge> edges) {
+        if (queryResult instanceof org.apache.tinkerpop.gremlin.structure.Vertex) {
+            // 处理单个节点
+            Vertex gremlinVertex = (Vertex) queryResult;
+            com.graphdb.core.model.Vertex vertex = convertGremlinVertexToVertex(gremlinVertex);
+            if (!containsVertex(vertices, vertex.getUid())) {
+                vertices.add(vertex);
+            }
+        } else if (queryResult instanceof Edge) {
+            // 处理单条边
+            Edge gremlinEdge = (Edge) queryResult;
+            com.graphdb.core.model.Edge edge = convertGremlinEdgeToEdge(gremlinEdge);
+            if (!containsEdge(edges, edge.getUid())) {
+                edges.add(edge);
+            }
+        } else if (queryResult instanceof List) {
+            // 处理列表
+            List<?> list = (List<?>) queryResult;
+            for (Object item : list) {
+                extractGremlinGraphElements(item, vertices, edges);
+            }
+        } else if (queryResult instanceof Map) {
+            // 处理Map（可能包含路径或其他结构）
+            Map<?, ?> map = (Map<?, ?>) queryResult;
+            for (Object value : map.values()) {
+                extractGremlinGraphElements(value, vertices, edges);
+            }
+        }
+        // 忽略其他类型的查询结果（如统计信息等）
+    }
+
+    /**
+     * 将Gremlin节点转换为Vertex对象
+     */
+    private com.graphdb.core.model.Vertex convertGremlinVertexToVertex(Vertex gremlinVertex) {
+        com.graphdb.core.model.Vertex vertex = new com.graphdb.core.model.Vertex();
+
+        try {
+            // 设置节点ID
+            vertex.setUid(gremlinVertex.id().toString());
+
+            // 设置标签
+            vertex.setLabel(gremlinVertex.label());
+
+            // 设置属性
+            Map<String, Object> properties = new HashMap<>();
+            gremlinVertex.properties().forEachRemaining(property -> properties.put(property.key(), property.value()));
+            vertex.setProperties(properties);
+
+        } catch (Exception e) {
+            // 设置默认值
+            vertex.setUid("unknown_vertex");
+            vertex.setLabel("Vertex");
+        }
+
+        return vertex;
+    }
+
+    /**
+     * 将Gremlin边转换为Edge对象
+     */
+    private com.graphdb.core.model.Edge convertGremlinEdgeToEdge(Edge gremlinEdge) {
+        com.graphdb.core.model.Edge edge = new com.graphdb.core.model.Edge();
+
+        try {
+            // 设置边ID
+            edge.setUid(gremlinEdge.id().toString());
+
+            // 设置标签
+            edge.setLabel(gremlinEdge.label());
+
+            // 设置源节点和目标节点
+            edge.setSourceUid(gremlinEdge.outVertex().id().toString());
+            edge.setTargetUid(gremlinEdge.inVertex().id().toString());
+
+            // 设置属性
+            Map<String, Object> properties = new HashMap<>();
+            gremlinEdge.properties().forEachRemaining(property -> properties.put(property.key(), property.value()));
+            edge.setProperties(properties);
+
+        } catch (Exception e) {
+            // 设置默认值
+            edge.setUid("unknown_edge");
+            edge.setLabel("Edge");
+            edge.setSourceUid("unknown");
+            edge.setTargetUid("unknown");
+        }
+
+        return edge;
+    }
+
+    /**
+     * 检查节点是否已存在
+     */
+    private boolean containsVertex(List<com.graphdb.core.model.Vertex> vertices, String uid) {
+        return vertices.stream().anyMatch(v -> uid.equals(v.getUid()));
+    }
+
+    /**
+     * 检查边是否已存在
+     */
+    private boolean containsEdge(List<com.graphdb.core.model.Edge> edges, String uid) {
+        return edges.stream().anyMatch(e -> uid.equals(e.getUid()));
     }
 
     @Override

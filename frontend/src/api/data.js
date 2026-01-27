@@ -170,15 +170,13 @@ export const dataApi = {
    */
   importCsv(connectionId, graphName, config, file) {
     const formData = new FormData()
-    formData.append('config', JSON.stringify(config))
+    formData.append('config', new Blob([JSON.stringify(config)], { type: 'application/json' }))
     formData.append('file', file)
     return request({
       method: 'post',
       url: `/connections/${connectionId}/graphs/${graphName}/data/import-csv`,
-      data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      data: formData
+      // 不要手动设置Content-Type，让浏览器自动设置boundary
     })
   }
 }

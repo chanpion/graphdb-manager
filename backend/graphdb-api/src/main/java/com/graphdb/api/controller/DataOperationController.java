@@ -1,5 +1,6 @@
 package com.graphdb.api.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graphdb.api.dto.Result;
 import com.graphdb.service.GraphService;
 import com.graphdb.core.model.Vertex;
@@ -314,12 +315,17 @@ public class DataOperationController {
     public Result<String> importCsv(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @RequestPart("config") CsvImportConfig config,
-            @RequestPart("file") MultipartFile file) {
+            @RequestParam("config") String configJson,
+            @RequestParam("file") MultipartFile file) {
         try {
             if (file.isEmpty()) {
                 return Result.error("上传的文件为空");
             }
+            
+            // 解析JSON配置
+            ObjectMapper objectMapper = new ObjectMapper();
+            CsvImportConfig config = objectMapper.readValue(configJson, CsvImportConfig.class);
+            
             String result = graphService.importFromCsv(connectionId, graphName, config, file.getInputStream());
             return Result.success(result);
         } catch (Exception e) {

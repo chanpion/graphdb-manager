@@ -26,6 +26,10 @@
               <div class="code-highlight" ref="highlightElement"></div>
             </div>
             <div class="editor-actions">
+              <el-button size="small" @click="moveCursorToStart">
+                <el-icon><Expand /></el-icon>
+                光标到开头
+              </el-button>
               <el-button size="small" @click="formatQuery">
                 <el-icon><MagicStick /></el-icon>
                 格式化
@@ -171,6 +175,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGraphStore } from '@/stores/graph'
 import { graphApi } from '@/api/graph'
+import { dataApi } from '@/api/data'
 import D3Graph from '@/components/graph/D3Graph.vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -288,6 +293,20 @@ onMounted(() => {
   updateVizDimensions()
   window.addEventListener('resize', updateVizDimensions)
   loadQueryHistory()
+  
+  // 将光标定位到查询语句框的开头
+  nextTick(() => {
+    if (queryEditor.value) {
+      queryEditor.value.focus()
+      // 只有当查询语句为空时，才将光标设置到开头
+      if (!queryStatement.value || queryStatement.value.trim() === '') {
+        queryEditor.value.setSelectionRange(0, 0) // 将光标设置到开头
+      } else {
+        // 如果已有内容，将光标放到末尾
+        queryEditor.value.setSelectionRange(queryStatement.value.length, queryStatement.value.length)
+      }
+    }
+  })
 })
 
 onUnmounted(() => {
@@ -320,44 +339,31 @@ const executeQuery = async () => {
   queryProgress.value = 0
   estimatedTime.value = 5 // 预估5秒完成
 
-  try {
-    // 模拟进度更新
-    const progressInterval = setInterval(() => {
-      queryProgress.value += 0.1
-      if (queryProgress.value >= 1) {
-        clearInterval(progressInterval)
-        queryProgress.value = 1
-      }
-    }, 100)
+    try {
+      // 模拟进度更新
+      const progressInterval = setInterval(() => {
+        queryProgress.value += 0.1
+        if (queryProgress.value >= 1) {
+          clearInterval(progressInterval)
+          queryProgress.value = 1
+        }
+      }, 100)
 
-    // TODO: 调用真实API执行查询
-    // const response = await graphApi.executeNativeQuery(
-    //   graphStore.selectedGraphName,
-    //   graphStore.currentQueryLanguage,
-    //   queryStatement.value
-    // )
-    
-    // 模拟API响应延迟
-    await new Promise(resolve => setTimeout(resolve, 5000))
-    
-    // 模拟数据 - 后续任务会替换为真实数据
-    const mockResponse = {
-      nodes: [
-        { id: 'node1', label: 'Person', properties: { name: 'Alice', age: 30, city: 'New York' } },
-        { id: 'node2', label: 'Person', properties: { name: 'Bob', age: 35, city: 'San Francisco' } },
-        { id: 'node3', label: 'Company', properties: { name: 'TechCorp', industry: 'Technology', employees: 1000 } },
-        { id: 'node4', label: 'Person', properties: { name: 'Charlie', age: 28, city: 'Boston' } },
-        { id: 'node5', label: 'Company', properties: { name: 'DataInc', industry: 'Data Analytics', employees: 500 } }
-      ],
-      edges: [
-        { id: 'edge1', source: 'node1', target: 'node2', label: 'KNOWS', properties: { since: '2020-01-01' } },
-        { id: 'edge2', source: 'node1', target: 'node3', label: 'WORKS_FOR', properties: { position: 'Engineer', startDate: '2019-06-01' } },
-        { id: 'edge3', source: 'node2', target: 'node4', label: 'KNOWS', properties: { since: '2021-03-15' } },
-        { id: 'edge4', source: 'node4', target: 'node5', label: 'WORKS_FOR', properties: { position: 'Data Scientist', startDate: '2022-01-10' } }
-      ]
-    }
+      // 调用真实API执行查询
+      const response = await dataApi.executeNativeQuery(
+        graphStore.selectedConnectionId,
+        selectedGraphName.value,
+        {
+          queryLanguage: currentQueryLanguage.value,
+          queryStatement: queryStatement.value
+        }
+      )
+      
+      // 根据API返回的数据结构转换格式
+      const apiResponse = response || {}
+      const transformedData = transformApiResponseToGraphData(apiResponse)
 
-    graphData.value = mockResponse
+      graphData.value = transformedData
 
     // 保存到查询历史
     saveToQueryHistory({
@@ -628,7 +634,101 @@ const formatTime = (timestamp) => {
   }
   // 否则显示日期
   return date.toLocaleDateString()
-}
+};
+
+// 将光标移动到查询语句框的开头
+const moveCursorToStart = () => {
+  if (queryEditor.value) {
+    queryEditor.value.focus()
+    queryEditor.value.setSelectionRange(0, 0);
+  }
+};
+
+// 将光标移动到查询语句框的末尾
+const moveCursorToEnd = () => {
+  if (queryEditor.value && queryStatement.value) {
+    queryEditor.value.focus();
+    const len = queryStatement.value.length;
+    queryEditor.value.setSelectionRange(len, len);
+  }
+};
+
+/**
+ * 将API返回的数据转换为D3图组件需要的格式
+ * @param {Object} apiResponse - API返回的数据
+ * @returns {Object} 转换后的图数据
+ */
+const transformApiResponseToGraphData = (apiResponse) => {
+  // API可能返回不同的数据结构，需要兼容处理
+  const rawData = apiResponse.data || apiResponse || []
+  
+  // 如果返回的是数组，尝试解析为图数据
+  if (Array.isArray(rawData)) {
+    const nodes = []
+    const edges = []
+    const nodeMap = new Map()
+    const edgeMap = new Map()
+    
+    // 遍历结果，提取节点和边
+    rawData.forEach((item, index) => {
+      // 处理不同的返回格式
+      if (item && typeof item === 'object') {
+        // 如果是节点
+        if (item.uid && item.label) {
+          const nodeId = item.uid
+          if (!nodeMap.has(nodeId)) {
+            nodeMap.set(nodeId, {
+              id: nodeId,
+              label: item.label,
+              properties: item.properties || {}
+            })
+          }
+        }
+        
+        // 如果是边（根据实际API返回的边格式调整）
+        if (item.sourceUid && item.targetUid && item.label) {
+          const edgeId = `${item.sourceUid}_${item.label}_${item.targetUid}`
+          if (!edgeMap.has(edgeId)) {
+            edgeMap.set(edgeId, {
+              id: edgeId,
+              source: item.sourceUid,
+              target: item.targetUid,
+              label: item.label,
+              properties: item.properties || {}
+            })
+          }
+        }
+      }
+    })
+    
+    // 如果没有解析出数据，返回默认结构
+    if (nodeMap.size === 0 && edgeMap.size === 0) {
+      return {
+        nodes: [],
+        edges: []
+      }
+    }
+    
+    return {
+      nodes: Array.from(nodeMap.values()),
+      edges: Array.from(edgeMap.values())
+    }
+  }
+  
+  // 如果返回的是标准图数据结构，直接使用
+  if (rawData.nodes && rawData.edges) {
+    return {
+      nodes: rawData.nodes || [],
+      edges: rawData.edges || []
+    }
+  }
+  
+  // 默认返回空数据
+  return {
+    nodes: [],
+    edges: []
+  }
+};
 </script>
 
 <style scoped>
