@@ -76,13 +76,13 @@
       <div class="legend">
         <!-- 动态节点类型图例 -->
         <div v-for="nodeType in uniqueNodeTypes" :key="`node-${nodeType}`" class="legend-item">
-          <div class="node-sample" :class="getNodeClass(nodeType)"></div>
+          <div class="node-sample" :style="{ backgroundColor: getNodeColor(nodeType) }"></div>
           <span>{{ nodeType }}</span>
         </div>
         
         <!-- 动态边类型图例 -->
         <div v-for="edgeType in uniqueEdgeTypes" :key="`edge-${edgeType}`" class="legend-item">
-          <div class="edge-sample"></div>
+          <div class="edge-sample" :style="{ backgroundColor: getEdgeColor(edgeType), borderColor: getEdgeColor(edgeType) }"></div>
           <span>{{ edgeType }}</span>
         </div>
       </div>
@@ -91,32 +91,32 @@
     <div ref="graphContainer" class="graph-container">
       <svg ref="svg" :width="width" :height="height">
         <defs>
-          <!-- 箭头标记 - 改进方向显示 -->
+          <!-- 箭头标记 -->
           <marker
             id="arrow"
             viewBox="0 0 10 10"
-            refX="10"
-            refY="3"
+            refX="8"
+            refY="5"
             markerWidth="6"
             markerHeight="6"
-            orient="auto"
+            orient="auto-start-reverse"
             markerUnits="strokeWidth"
           >
-            <path d="M 0 0 L 10 3 L 0 6 z" fill="#666" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
           </marker>
           
           <!-- 双向箭头标记 -->
           <marker
             id="arrow-bidirectional"
             viewBox="0 0 10 10"
-            refX="5"
-            refY="3"
+            refX="0"
+            refY="5"
             markerWidth="6"
             markerHeight="6"
-            orient="auto"
+            orient="auto-start-reverse"
             markerUnits="strokeWidth"
           >
-            <path d="M 0 3 L 5 0 L 10 3 L 5 6 z" fill="#666" />
+            <path d="M 0 5 L 5 0 L 10 5 L 5 10 z" fill="#666" />
           </marker>
           
           <!-- 节点渐变 -->
@@ -424,7 +424,7 @@ function renderData() {
   edgeGroups
     .append('line')
     .attr('class', 'edge-line')
-    .attr('stroke', '#666')
+    .attr('stroke', d => getEdgeColor(d.label))
     .attr('stroke-width', 2)
     .attr('marker-end', 'url(#arrow)')
     .attr('marker-start', d => {
@@ -456,6 +456,7 @@ function renderData() {
   
   // 更新边的箭头标记（处理更新的边）
   d3Edges.select('.edge-line')
+    .attr('stroke', d => getEdgeColor(d.label))
     .attr('marker-end', 'url(#arrow)')
     .attr('marker-start', d => {
       // 检查是否为双向边
@@ -512,7 +513,7 @@ function renderData() {
     .attr('fill', '#333')
     .attr('font-size', '8px')  /* 调小节点标签字体 */
     .attr('font-weight', 'bold')
-    .text(d => d.label || d.id.substring(0, 8))
+    .text(d => d.id.length > 12 ? d.id.substring(0, 12) + '...' : d.id)
   
   // 将新添加的节点与现有节点合并
   d3Nodes = d3Nodes.merge(nodeGroups)
@@ -545,9 +546,10 @@ function updateSimulation() {
     simulation.value.alpha(1).restart()
   }
   
-  // 重新应用箭头标记到所有边
+  // 重新应用箭头标记和颜色到所有边
   if (d3Edges) {
     d3Edges.select('.edge-line')
+      .attr('stroke', d => getEdgeColor(d.label))
       .attr('marker-end', 'url(#arrow)')
       .attr('marker-start', d => {
         // 检查是否为双向边
@@ -563,12 +565,39 @@ function updateSimulation() {
 function ticked() {
   if (!d3Edges || !d3Nodes) return
   
-  // 更新边位置
+  const nodeRadius = 16
+  const arrowOffset = 2 // 为箭头留出额外空间
+  
+  // 更新边位置 - 从节点边缘到节点边缘，为箭头留出空间
   d3Edges.select('.edge-line')
-    .attr('x1', d => d.source.x)
-    .attr('y1', d => d.source.y)
-    .attr('x2', d => d.target.x)
-    .attr('y2', d => d.target.y)
+    .attr('x1', d => {
+      const dx = d.target.x - d.source.x
+      const dy = d.target.y - d.source.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      if (distance === 0) return d.source.x
+      return d.source.x + (dx / distance) * (nodeRadius + arrowOffset)
+    })
+    .attr('y1', d => {
+      const dx = d.target.x - d.source.x
+      const dy = d.target.y - d.source.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      if (distance === 0) return d.source.y
+      return d.source.y + (dy / distance) * (nodeRadius + arrowOffset)
+    })
+    .attr('x2', d => {
+      const dx = d.target.x - d.source.x
+      const dy = d.target.y - d.source.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      if (distance === 0) return d.target.x
+      return d.target.x - (dx / distance) * (nodeRadius + arrowOffset)
+    })
+    .attr('y2', d => {
+      const dx = d.target.x - d.source.x
+      const dy = d.target.y - d.source.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      if (distance === 0) return d.target.y
+      return d.target.y - (dy / distance) * (nodeRadius + arrowOffset)
+    })
   
   // 更新边标签位置
   d3Edges.select('.edge-label')
@@ -898,26 +927,79 @@ function hideContextMenu() {
 
 // 获取节点颜色
 function getNodeColor(label) {
-  const colors = {
+  // 预定义的颜色池，用于动态分配
+  const colorPool = [
+    '#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399',
+    '#8E44AD', '#3498DB', '#1ABC9C', '#16A085', '#27AE60',
+    '#2980B9', '#8E44AD', '#F39C12', '#D35400', '#C0392B',
+    '#7F8C8D', '#2ECC71', '#34495E', '#9B59B6', '#E74C3C'
+  ]
+  
+  // 预定义的节点类型颜色映射
+  const predefinedColors = {
     'Person': '#409EFF',
+    'person': '#409EFF',
     'Company': '#67C23A',
+    'company': '#67C23A',
     'Product': '#E6A23C',
-    'default': '#909399'
+    'product': '#E6A23C',
+    'Organization': '#F56C6C',
+    'organization': '#F56C6C',
+    'User': '#8E44AD',
+    'user': '#8E44AD',
+    'Item': '#3498DB',
+    'item': '#3498DB'
   }
   
-  return colors[label] || colors.default
+  // 如果有预定义颜色，使用预定义颜色
+  if (label && predefinedColors[label]) {
+    return predefinedColors[label]
+  }
+  
+  // 否则根据 label 的哈希值从颜色池中选择一个固定颜色
+  if (!label) return '#909399'
+  
+  const hash = label.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const colorIndex = hash % colorPool.length
+  return colorPool[colorIndex]
 }
 
-// 获取节点CSS类
-function getNodeClass(label) {
-  const classes = {
-    'Person': 'node-person',
-    'Company': 'node-company',
-    'Product': 'node-product',
-    'default': 'node-default'
+// 获取边颜色
+function getEdgeColor(label) {
+  // 预定义的颜色池，用于动态分配
+  const colorPool = [
+    '#666666', '#999999', '#CCCCCC', '#5D6D7E', '#808B96',
+    '#AAB7B8', '#B2BABB', '#BFC9CA', '#D0D3D4', '#D5D8DC',
+    '#E5E8E8', '#EBEDEF', '#F4F6F6', '#F8F9F9'
+  ]
+  
+  // 预定义的边类型颜色映射
+  const predefinedColors = {
+    'KNOWS': '#5D6D7E',
+    'knows': '#5D6D7E',
+    'WORKS_FOR': '#808B96',
+    'works_for': '#808B96',
+    'FRIEND': '#AAB7B8',
+    'friend': '#AAB7B8',
+    'FOLLOWS': '#B2BABB',
+    'follows': '#B2BABB',
+    'LIKES': '#BFC9CA',
+    'likes': '#BFC9CA',
+    'BOUGHT': '#D0D3D4',
+    'bought': '#D0D3D4'
   }
   
-  return classes[label] || classes.default
+  // 如果有预定义颜色，使用预定义颜色
+  if (label && predefinedColors[label]) {
+    return predefinedColors[label]
+  }
+  
+  // 否则根据 label 的哈希值从颜色池中选择一个固定颜色
+  if (!label) return '#666666'
+  
+  const hash = label.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const colorIndex = hash % colorPool.length
+  return colorPool[colorIndex]
 }
 
 // 缩放控制
@@ -1157,22 +1239,6 @@ function exportAsJSON() {
   margin-right: 8px;
 }
 
-.node-person {
-  background-color: #409EFF;
-}
-
-.node-company {
-  background-color: #67C23A;
-}
-
-.node-product {
-  background-color: #E6A23C;
-}
-
-.node-default {
-  background-color: #909399;
-}
-
 .edge-sample {
   width: 30px;
   height: 2px;
@@ -1188,9 +1254,10 @@ function exportAsJSON() {
   top: -4px;
   width: 0;
   height: 0;
-  border-left: 6px solid #999;
+  border-left: 6px solid;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
+  border-left-color: inherit;
 }
 
 .context-menu {

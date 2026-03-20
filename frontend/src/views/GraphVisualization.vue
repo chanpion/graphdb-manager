@@ -196,7 +196,7 @@ const graphStore = useGraphStore()
 const { selectedGraphName, currentQueryLanguage } = storeToRefs(graphStore)
 
 // 响应式数据
-const queryStatement = ref('MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50')
+const queryStatement = ref('')
 const queryLoading = ref(false)
 const queryHistory = ref([])
 const selectedTemplate = ref('')
@@ -406,6 +406,10 @@ const loadQueryHistory = () => {
 const loadHistoryQuery = (historyItem) => {
   selectedGraphName.value = historyItem.graphName
   queryStatement.value = historyItem.statement
+  // 触发语法高亮更新
+  nextTick(() => {
+    highlightSyntax()
+  })
 }
 
 const formatQuery = () => {
@@ -662,6 +666,32 @@ const transformApiResponseToGraphData = (apiResponse) => {
   // API可能返回不同的数据结构，需要兼容处理
   const rawData = apiResponse.data || apiResponse || []
   
+  // 优先处理 vertices/edges 格式
+  if (rawData.vertices && rawData.edges) {
+    return {
+      nodes: rawData.vertices.map(v => ({
+        id: v.uid,
+        label: v.label,
+        properties: v.properties || {}
+      })),
+      edges: rawData.edges.map(e => ({
+        id: e.uid,
+        source: e.sourceUid,
+        target: e.targetUid,
+        label: e.label,
+        properties: e.properties || {}
+      }))
+    }
+  }
+  
+  // 如果返回的是标准图数据结构，直接使用
+  if (rawData.nodes && rawData.edges) {
+    return {
+      nodes: rawData.nodes || [],
+      edges: rawData.edges || []
+    }
+  }
+  
   // 如果返回的是数组，尝试解析为图数据
   if (Array.isArray(rawData)) {
     const nodes = []
@@ -712,14 +742,6 @@ const transformApiResponseToGraphData = (apiResponse) => {
     return {
       nodes: Array.from(nodeMap.values()),
       edges: Array.from(edgeMap.values())
-    }
-  }
-  
-  // 如果返回的是标准图数据结构，直接使用
-  if (rawData.nodes && rawData.edges) {
-    return {
-      nodes: rawData.nodes || [],
-      edges: rawData.edges || []
     }
   }
   
