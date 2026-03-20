@@ -218,7 +218,14 @@ onMounted(async () => {
   tabStore.initTabs()
 
   // 加载所有连接的图列表
-  await graphStore.loadAllGraphs()
+  try {
+    console.log('HeaderNavigation: 开始加载图列表...')
+    await graphStore.loadAllGraphs()
+    console.log('HeaderNavigation: 图列表加载完成')
+    console.log('HeaderNavigation: graphs:', graphs.value)
+  } catch (error) {
+    console.error('HeaderNavigation: 加载图列表失败:', error)
+  }
 })
 </script>
 

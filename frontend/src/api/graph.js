@@ -2,10 +2,14 @@ import request from './request'
 
 export const graphApi = {
   list(connectionId, sourceType) {
+    const params = {}
+    if (sourceType !== undefined && sourceType !== null && sourceType !== '') {
+      params.sourceType = sourceType
+    }
     return request({
       method: 'get',
       url: `/connections/${connectionId}/graphs`,
-      params: { sourceType }
+      params
     })
   },
 

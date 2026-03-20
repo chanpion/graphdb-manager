@@ -358,7 +358,8 @@ const editConnection = (row) => {
   isEditMode.value = true
   editingId.value = row.id
   form.name = row.name
-  form.databaseType = row.databaseType
+  // 后端返回的字段是 type，不是 databaseType
+  form.databaseType = row.type || row.databaseType
   form.host = row.host
   form.port = row.port
   form.username = row.username || ''

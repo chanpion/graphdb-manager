@@ -1,0 +1,30 @@
+# MySQL 数据库配置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/gdbms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+    # HikariCP 连接池配置123
+    hikari:
+      pool-name: GraphDB-HikariCP
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+
+  # 关闭 H2 控制台
+  h2:
+    console:
+      enabled: false
+
+  # MySQL 不需要 SQL 初始化（使用外置数据库）
+  sql:
+    init:
+      mode: never
+      # 如需初始化可使用 MySQL 专用 SQL 文件
+      # schema-locations: classpath:schema-mysql.sql
+      # data-locations: classpath:data-mysql.sql
