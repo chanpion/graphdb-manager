@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // import static com.vesoft.nebula.client.graph.net.NebulaPool.getSession; // 移除不正确的静态导入
 
@@ -60,9 +61,10 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             poolConfig.setMaxConnSize(1);
 
             NebulaPool testPool = new NebulaPool();
-            List<HostAddress> addresses = Arrays.asList(
-                    new HostAddress(config.getHost(), config.getPort())
-            );
+
+            List<HostAddress> addresses = Arrays.stream(config.getHost().split(","))
+                    .map(host -> new HostAddress(host, config.getPort()))
+                    .collect(Collectors.toList());
 
             testPool.init(addresses, poolConfig);
             Session testSession = testPool.getSession(config.getUsername(), config.getPassword(), false);
@@ -87,9 +89,10 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             poolConfig.setIdleTime(1000 * 60 * 60 * 2);
 
             pool = new NebulaPool();
-            List<HostAddress> addresses = Arrays.asList(
-                    new HostAddress(config.getHost(), config.getPort())
-            );
+
+            List<HostAddress> addresses = Arrays.stream(config.getHost().split(","))
+                    .map(host -> new HostAddress(host, config.getPort()))
+                    .collect(Collectors.toList());
 
             pool.init(addresses, poolConfig);
             session = pool.getSession(config.getUsername(), config.getPassword(), false);
@@ -455,8 +458,12 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
         }
 
         try {
-            // 创建图空间
-            String createSpaceQuery = "CREATE SPACE IF NOT EXISTS `" + graphName + "`(partition_num=10, replica_factor=1);";
+            // 创建图空间，必须指定 vid_type（NebulaGraph 2.x+ 要求）
+            // 使用 FIXED_STRING(64) 作为默认的 vid_type，支持最长 64 字符的字符串 ID
+            String createSpaceQuery = String.format(
+                "CREATE SPACE IF NOT EXISTS `%s`(" +
+                "partition_num=10, replica_factor=1, vid_type=FIXED_STRING(64));",
+                graphName);
             ResultSet result = session.execute(createSpaceQuery);
             if (!result.isSucceeded()) {
                 throw new CoreException("创建图空间失败: " + result.getErrorMessage());
@@ -1119,5 +1126,81 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             return value;
         }
 
+    }
+
+    @Override
+    public Long countVertices(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("NebulaGraph 连接未建立");
+        }
+
+        try {
+            // 切换到指定图空间
+            if (graphName != null && !graphName.isEmpty()) {
+                session.execute("USE `" + graphName + "`");
+                currentGraph = graphName;
+            }
+
+            // 构建计数查询
+            String query;
+            if (label != null && !label.isEmpty()) {
+                query = "MATCH (v:`" + label + "`) RETURN count(v) AS count;";
+            } else {
+                query = "MATCH (v) RETURN count(v) AS count;";
+            }
+
+            ResultSet result = session.execute(query);
+            if (!result.isSucceeded()) {
+                throw new CoreException("统计节点数量失败：" + result.getErrorMessage());
+            }
+
+            // 获取计数结果
+            if (result.rowsSize() > 0) {
+                ValueWrapper countValue = result.rowValues(0).get(0);
+                return countValue.asLong();
+            }
+
+            return 0L;
+        } catch (Exception e) {
+            throw new CoreException("统计 Nebula 节点数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Long countEdges(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("NebulaGraph 连接未建立");
+        }
+
+        try {
+            // 切换到指定图空间
+            if (graphName != null && !graphName.isEmpty()) {
+                session.execute("USE `" + graphName + "`");
+                currentGraph = graphName;
+            }
+
+            // 构建计数查询
+            String query;
+            if (label != null && !label.isEmpty()) {
+                query = "MATCH ()-[e:`" + label + "`]->() RETURN count(e) AS count;";
+            } else {
+                query = "MATCH ()-[e]->() RETURN count(e) AS count;";
+            }
+
+            ResultSet result = session.execute(query);
+            if (!result.isSucceeded()) {
+                throw new CoreException("统计边数量失败：" + result.getErrorMessage());
+            }
+
+            // 获取计数结果
+            if (result.rowsSize() > 0) {
+                ValueWrapper countValue = result.rowValues(0).get(0);
+                return countValue.asLong();
+            }
+
+            return 0L;
+        } catch (Exception e) {
+            throw new CoreException("统计 Nebula 边数量失败：" + e.getMessage(), e);
+        }
     }
 }

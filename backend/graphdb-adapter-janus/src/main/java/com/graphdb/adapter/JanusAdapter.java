@@ -1005,8 +1005,44 @@ public class JanusAdapter implements GraphAdapter, SchemaHandler, DataHandler {
                 );
             }
         } catch (Exception e) {
-            System.out.println("Gremlin查询失败: " + e.getMessage());
-            throw new CoreException("执行Gremlin查询失败: " + e.getMessage(), e);
+            System.out.println("Gremlin 查询失败：" + e.getMessage());
+            throw new CoreException("执行 Gremlin 查询失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Long countVertices(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("JanusGraph 连接未建立");
+        }
+
+        try {
+            // 构建计数查询
+            if (label != null && !label.isEmpty()) {
+                return graph.traversal().V().hasLabel(label).count().next();
+            } else {
+                return graph.traversal().V().count().next();
+            }
+        } catch (Exception e) {
+            throw new CoreException("统计 JanusGraph 节点数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Long countEdges(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("JanusGraph 连接未建立");
+        }
+
+        try {
+            // 构建计数查询
+            if (label != null && !label.isEmpty()) {
+                return graph.traversal().E().hasLabel(label).count().next();
+            } else {
+                return graph.traversal().E().count().next();
+            }
+        } catch (Exception e) {
+            throw new CoreException("统计 JanusGraph 边数量失败：" + e.getMessage(), e);
         }
     }
 }

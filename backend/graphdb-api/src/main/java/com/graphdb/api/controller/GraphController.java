@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -21,10 +22,10 @@ import java.util.Map;
 @RequestMapping("/api/v1/connections/{connectionId}/graphs")
 @CrossOrigin
 public class GraphController {
-    
+
     @Autowired
     private GraphService graphService;
-    
+
     /**
      * 获取图列表
      */
@@ -43,7 +44,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 获取图详情
      */
@@ -59,7 +60,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 获取图schema
      */
@@ -75,24 +76,31 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 创建图
      */
     @Operation(summary = "创建图", description = "在指定连接下创建新的图")
     @PostMapping
     public Result<Void> create(
-            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "连接 ID", required = true) @PathVariable Long connectionId,
             @RequestBody Map<String, String> request) {
-        try {
-            String graphName = request.get("graphName");
-            graphService.createGraph(connectionId, graphName);
-            return Result.success(null);
-        } catch (Exception e) {
-            return Result.error(e.getMessage());
+        String graphName = request.get("graphName");
+        String graphDisplayName = request.get("graphDisplayName");
+
+        if (graphName == null || graphName.trim().isEmpty()) {
+            return Result.error("图标识不能为空");
         }
+
+        // 验证图标识格式（只允许字母、数字、下划线）
+        if (!graphName.matches("^[a-zA-Z0-9_]+$")) {
+            return Result.error("图标识只能包含字母、数字和下划线");
+        }
+
+        graphService.createGraph(connectionId, graphName, graphDisplayName);
+        return Result.success(null);
     }
-    
+
     /**
      * 删除图
      */
@@ -108,7 +116,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 获取点类型列表
      */
@@ -124,7 +132,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 获取边类型列表
      */
@@ -140,7 +148,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 创建点类型
      */
@@ -157,7 +165,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 删除点类型
      */
@@ -174,7 +182,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 创建边类型
      */
@@ -191,7 +199,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 删除边类型
      */
@@ -208,7 +216,7 @@ public class GraphController {
             return Result.error(e.getMessage());
         }
     }
-    
+
     /**
      * 更新图
      */

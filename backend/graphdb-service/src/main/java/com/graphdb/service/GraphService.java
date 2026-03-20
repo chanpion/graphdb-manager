@@ -134,17 +134,45 @@ public class GraphService {
     
     
     public void createGraph(Long connectionId, String graphName) {
+        createGraph(connectionId, graphName, null);
+    }
+        
+    /**
+     * 创建图
+     * @param connectionId 连接 ID
+     * @param graphName 图名称（标识）
+     * @param description 图描述（可选）
+     */
+    public void createGraph(Long connectionId, String graphName, String description) {
         ConnectionConfigDTO dto = connectionService.getById(connectionId);
         ConnectionConfig config = convertDTOToModel(dto);
         DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
         GraphAdapter adapter = getAdapter(type);
         if (adapter == null) {
-            throw new RuntimeException("未找到对应数据库类型的适配器: " + type);
+            throw new RuntimeException("未找到对应数据库类型的适配器：" + type);
         }
         try {
+            // 在数据库中创建图空间
             adapter.createGraph(config, graphName);
+                
+            // 同时在本地数据库记录图实例信息
+            try {
+                GraphInstanceEntity entity = new GraphInstanceEntity();
+                entity.setConnectionId(connectionId);
+                entity.setGraphName(graphName);
+                entity.setDatabaseType(config.getType());
+                entity.setSourceType(GraphSourceEnum.PLATFORM.getCode());
+                entity.setStatus("NORMAL");
+                entity.setDescription(description != null ? description : "平台创建的图");
+                entity.setVertexCount(0L);
+                entity.setEdgeCount(0L);
+                graphInstanceMapper.insert(entity);
+            } catch (Exception e) {
+                System.out.println("警告：保存图实例信息到本地数据库失败：" + e.getMessage());
+                // 不抛出异常，不影响图的创建
+            }
         } catch (CoreException e) {
-            throw new RuntimeException("创建图失败: " + e.getMessage(), e);
+            throw new RuntimeException("创建图失败：" + e.getMessage(), e);
         }
     }
     
@@ -616,20 +644,147 @@ public class GraphService {
     
     /**
      * 获取图实例列表，支持按来源筛选
-     * @param connectionId 连接ID
+     * @param connectionId 连接 ID
      * @param sourceType 图来源类型（PLATFORM/EXISTING），可选
      * @return 图实例列表
      */
     public List<GraphInstanceEntity> getGraphInstances(Long connectionId, String sourceType) {
         if (sourceType != null && !sourceType.isEmpty()) {
-            // 验证sourceType是否有效
+            // 验证 sourceType 是否有效
             if (!GraphSourceEnum.isValid(sourceType)) {
-                throw new IllegalArgumentException("无效的图来源类型: " + sourceType);
+                throw new IllegalArgumentException("无效的图来源类型：" + sourceType);
             }
-            return graphInstanceMapper.selectByConnectionIdAndSourceType(connectionId, sourceType);
+                
+            // 如果是查询已存在的图，需要从数据库适配器中获取
+            if (GraphSourceEnum.EXISTING.getCode().equals(sourceType)) {
+                return getExistingGraphsFromDatabase(connectionId);
+            } else {
+                // 查询平台创建的图
+                return graphInstanceMapper.selectByConnectionIdAndSourceType(connectionId, sourceType);
+            }
         } else {
-            return graphInstanceMapper.selectByConnectionId(connectionId);
+            // 不指定 sourceType 时，同时获取已存在和平台创建的图
+            List<GraphInstanceEntity> platformGraphs = graphInstanceMapper.selectByConnectionIdAndSourceType(
+                connectionId, GraphSourceEnum.PLATFORM.getCode());
+            List<GraphInstanceEntity> existingGraphs = getExistingGraphsFromDatabase(connectionId);
+                
+            // 合并两个列表
+            java.util.stream.Stream<GraphInstanceEntity> combined = java.util.stream.Stream.concat(
+                platformGraphs.stream(), 
+                existingGraphs.stream()
+            );
+            return combined.toList();
         }
+    }
+        
+    /**
+     * 从数据库适配器获取已存在的图列表
+     * @param connectionId 连接 ID
+     * @return 已存在的图实例列表
+     */
+    private List<GraphInstanceEntity> getExistingGraphsFromDatabase(Long connectionId) {
+        try {
+            // 获取连接配置
+            ConnectionConfigDTO dto = connectionService.getById(connectionId);
+            ConnectionConfig config = convertDTOToModel(dto);
+            DatabaseTypeEnum type = DatabaseTypeEnum.fromCode(config.getType());
+            GraphAdapter adapter = getAdapter(type);
+                
+            if (adapter == null) {
+                throw new RuntimeException("未找到对应数据库类型的适配器：" + type);
+            }
+                
+            // 调用适配器的 getGraphs 方法获取已存在的图（如 Nebula 的 SHOW SPACES）
+            List<String> graphNames = adapter.getGraphs(config);
+                
+            // 将图名称转换为 GraphInstanceEntity 列表，并统计每个图的点边数量
+            return graphNames.stream().map(graphName -> {
+                GraphInstanceEntity entity = new GraphInstanceEntity();
+                entity.setConnectionId(connectionId);
+                entity.setGraphName(graphName);
+                entity.setSourceType(GraphSourceEnum.EXISTING.getCode());
+                entity.setStatus("ACTIVE");
+                entity.setDescription("图数据库已有的图空间");
+                        
+                // 统计该图的点边数量
+                try {
+                    // 检查适配器是否实现了 DataHandler 接口
+                    if (adapter instanceof DataHandler) {
+                        DataHandler dataHandler = (DataHandler) adapter;
+                        // 直接调用统计方法获取实际的点边数量
+                        Long vertexCount = dataHandler.countVertices(graphName, null);
+                        Long edgeCount = dataHandler.countEdges(graphName, null);
+                        entity.setVertexCount(vertexCount);
+                        entity.setEdgeCount(edgeCount);
+                    } else {
+                        // 如果没有实现 DataHandler，尝试从 schema 获取
+                        GraphSchema schema = adapter.getGraphSchema(config, graphName);
+                        if (schema != null) {
+                            entity.setVertexCount(calculateVertexCount(schema));
+                            entity.setEdgeCount(calculateEdgeCount(schema));
+                        } else {
+                            entity.setVertexCount(0L);
+                            entity.setEdgeCount(0L);
+                        }
+                    }
+                } catch (Exception e) {
+                    // 如果获取失败，设置为 0
+                    entity.setVertexCount(0L);
+                    entity.setEdgeCount(0L);
+                }
+                        
+                return entity;
+            }).toList();
+                    
+        } catch (Exception e) {
+            throw new RuntimeException("获取已存在的图列表失败：" + e.getMessage(), e);
+        }
+    }
+        
+    /**
+     * 计算点总数
+     * @param schema 图 schema
+     * @return 点总数
+     */
+    private Long calculateVertexCount(GraphSchema schema) {
+        if (schema == null || schema.getVertexLabels() == null) {
+            return 0L;
+        }
+            
+        // 尝试从 statistics 中获取
+        if (schema.getStatistics() != null && schema.getStatistics().containsKey("vertexCount")) {
+            Object count = schema.getStatistics().get("vertexCount");
+            if (count instanceof Number) {
+                return ((Number) count).longValue();
+            }
+        }
+            
+        // TODO: 需要从 DataHandler 获取实际的点数量统计
+        // 目前返回 0，后续可以通过执行 COUNT 查询来获取实际数量
+        return 0L;
+    }
+        
+    /**
+     * 计算边总数
+     * @param schema 图 schema
+     * @return 边总数
+     */
+    private Long calculateEdgeCount(GraphSchema schema) {
+        if (schema == null || schema.getEdgeLabels() == null) {
+            return 0L;
+        }
+            
+        // 尝试从 statistics 中获取
+        if (schema.getStatistics() != null && schema.getStatistics().containsKey("edgeCount")) {
+            Object count = schema.getStatistics().get("edgeCount");
+            if (count instanceof Number) {
+                return ((Number) count).longValue();
+            }
+        }
+            
+        // TODO: 需要从 DataHandler 获取实际的边数量统计
+        // 目前返回 0，后续可以通过执行 COUNT 查询来获取实际数量
+        return 0L;
     }
     
     /**

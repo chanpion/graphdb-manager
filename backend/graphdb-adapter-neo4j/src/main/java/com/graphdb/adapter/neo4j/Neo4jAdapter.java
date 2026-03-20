@@ -1325,8 +1325,54 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
                 );
             }
         } catch (Exception e) {
-            System.out.println("Cypher查询失败: " + e.getMessage());
-            throw new CoreException("执行Cypher查询失败: " + e.getMessage(), e);
+            System.out.println("Cypher 查询失败：" + e.getMessage());
+            throw new CoreException("执行 Cypher 查询失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Long countVertices(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j 连接未建立");
+        }
+
+        try {
+            // 构建计数查询
+            String query;
+            if (label != null && !label.isEmpty()) {
+                query = "MATCH (v:" + label + ") RETURN count(v) AS count;";
+            } else {
+                query = "MATCH (v) RETURN count(v) AS count;";
+            }
+
+            Result result = session.run(query);
+            Record record = result.single();
+            return record.get("count").asLong();
+        } catch (Exception e) {
+            throw new CoreException("统计 Neo4j 节点数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Long countEdges(String graphName, String label) {
+        if (!isConnected()) {
+            throw new CoreException("Neo4j 连接未建立");
+        }
+
+        try {
+            // 构建计数查询
+            String query;
+            if (label != null && !label.isEmpty()) {
+                query = "MATCH ()-[r:" + label + "]->() RETURN count(r) AS count;";
+            } else {
+                query = "MATCH ()-[r]->() RETURN count(r) AS count;";
+            }
+
+            Result result = session.run(query);
+            Record record = result.single();
+            return record.get("count").asLong();
+        } catch (Exception e) {
+            throw new CoreException("统计 Neo4j 边数量失败：" + e.getMessage(), e);
         }
     }
 }
