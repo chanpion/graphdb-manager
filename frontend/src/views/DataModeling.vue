@@ -145,27 +145,17 @@
               <el-tag :type="getIndexTypeTag(row.type)">{{ row.type }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="字段" width="250">
+          <el-table-column label="字段">
             <template #default="{ row }">
               <el-tag v-for="field in (row.fields || [])" :key="field" size="small" style="margin-right: 5px;">
                 {{ field }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag :type="getStatusTag(row.status)">{{ row.status }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="100">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <el-button size="small" @click="rebuildIndex(row.name)" :disabled="row.status !== 'ACTIVE'" title="重建">
-                  <el-icon><Tools /></el-icon>
-                </el-button>
-                <el-button size="small" type="danger" @click="deleteIndex(row.name)" :disabled="row.status === 'BUILDING'" title="删除">
+                <el-button size="small" type="danger" @click="deleteIndex(row.name)" title="删除">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </div>
@@ -295,9 +285,6 @@
             <el-button type="primary" @click="addIndexField">添加字段</el-button>
           </div>
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="indexForm.description" placeholder="请输入描述" type="textarea" :rows="2" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="createIndexDialogVisible = false">取消</el-button>
@@ -311,7 +298,7 @@
 import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Plus, List, Grid, Edit, Delete, Tools } from '@element-plus/icons-vue'
+import { Refresh, Plus, List, Grid, Edit, Delete } from '@element-plus/icons-vue'
 import { connectionApi } from '../api/connection'
 import { storeToRefs } from 'pinia'
 import { graphApi } from '../api/graph'
@@ -369,8 +356,7 @@ const edgeTypeForm = reactive({
 const indexForm = reactive({
   name: '',
   type: 'UNIQUE',
-  fields: [],
-  description: ''
+  fields: []
 })
 
 const vertexTypeFormRef = ref(null)
@@ -475,7 +461,6 @@ const showCreateIndexDialog = () => {
   indexForm.name = ''
   indexForm.type = 'UNIQUE'
   indexForm.fields = []
-  indexForm.description = ''
   createIndexDialogVisible.value = true
 }
 
@@ -496,22 +481,6 @@ const handleCreateIndex = async () => {
     ElMessage.error('创建索引失败')
   } finally {
     creatingIndex.value = false
-  }
-}
-
-const rebuildIndex = async (indexName) => {
-  try {
-    await ElMessageBox.confirm('确定要重建此索引吗？', '提示', {
-      type: 'warning'
-    })
-    await graphApi.rebuildIndex(selectedConnectionId.value, selectedGraphName.value, indexName)
-    ElMessage.success('索引重建已开始')
-    loadIndexes()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('重建索引失败:', error)
-      ElMessage.error('重建索引失败')
-    }
   }
 }
 
@@ -539,15 +508,6 @@ const getIndexTypeTag = (type) => {
     'SPATIAL': 'info'
   }
   return tagMap[type] || ''
-}
-
-const getStatusTag = (status) => {
-  const tagMap = {
-    'ACTIVE': 'success',
-    'BUILDING': 'warning',
-    'FAILED': 'danger'
-  }
-  return tagMap[status] || ''
 }
 
 const showCreateVertexTypeDialog = () => {

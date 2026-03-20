@@ -9,6 +9,7 @@ import com.graphdb.core.model.ConnectionConfig;
 import com.graphdb.core.model.CsvImportConfig;
 import com.graphdb.core.model.GraphQueryResult;
 import com.graphdb.core.model.GraphSchema;
+import com.graphdb.core.model.IndexInfo;
 import com.graphdb.core.model.LabelType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -371,6 +372,43 @@ public class JanusAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             return edgeTypes;
         } catch (Exception e) {
             throw new CoreException("获取JanusGraph边类型列表失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<IndexInfo> getIndexes(ConnectionConfig config, String graphName) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+
+        try {
+            JanusGraphManagement management = graph.openManagement();
+            List<IndexInfo> indexes = new ArrayList<>();
+
+            // 获取顶点索引
+            Iterable<org.janusgraph.core.schema.JanusGraphIndex> vertexIndexes =
+                management.getGraphIndexes(org.apache.tinkerpop.gremlin.structure.Vertex.class);
+            for (org.janusgraph.core.schema.JanusGraphIndex index : vertexIndexes) {
+                IndexInfo indexInfo = new IndexInfo();
+                indexInfo.setName(index.name());
+                indexInfo.setType("VERTEX_INDEX");
+                indexes.add(indexInfo);
+            }
+
+            // 获取边索引
+            Iterable<org.janusgraph.core.schema.JanusGraphIndex> edgeIndexes =
+                management.getGraphIndexes(org.apache.tinkerpop.gremlin.structure.Edge.class);
+            for (org.janusgraph.core.schema.JanusGraphIndex index : edgeIndexes) {
+                IndexInfo indexInfo = new IndexInfo();
+                indexInfo.setName(index.name());
+                indexInfo.setType("EDGE_INDEX");
+                indexes.add(indexInfo);
+            }
+
+            management.rollback();
+            return indexes;
+        } catch (Exception e) {
+            throw new CoreException("获取JanusGraph索引列表失败: " + e.getMessage(), e);
         }
     }
 

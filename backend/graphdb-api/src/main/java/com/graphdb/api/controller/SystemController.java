@@ -42,13 +42,13 @@ public class SystemController {
     @Operation(summary = "获取操作日志", description = "获取系统操作日志记录")
     @GetMapping("/connections/{connectionId}/logs")
     public Result<Map<String, Object>> getOperationLogs(
-            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
-            @Parameter(description = "页码", example = "1") @RequestParam(required = false) Integer page,
-            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false) Integer pageSize,
-            @Parameter(description = "开始时间") @RequestParam(required = false) Long startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) Long endTime,
-            @Parameter(description = "操作类型筛选") @RequestParam(required = false) String operationType,
-            @Parameter(description = "结果状态筛选") @RequestParam(required = false) String resultStatus) {
+            @Parameter(description = "连接 ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
+            @Parameter(description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
+            @Parameter(description = "开始时间") @RequestParam(required = false, name = "startTime") Long startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false, name = "endTime") Long endTime,
+            @Parameter(description = "操作类型筛选") @RequestParam(required = false, name = "operationType") String operationType,
+            @Parameter(description = "结果状态筛选") @RequestParam(required = false, name = "resultStatus") String resultStatus) {
         try {
             Map<String, Object> logs = systemService.getOperationLogs(
                     connectionId, page, pageSize, startTime, endTime, operationType, resultStatus);
@@ -90,9 +90,9 @@ public class SystemController {
      */
     @GetMapping("/metrics")
     public Result<Map<String, Object>> getSystemMetrics(
-            @RequestParam(required = false) String metricType,
-            @RequestParam(required = false) Long startTime,
-            @RequestParam(required = false) Long endTime) {
+            @RequestParam(required = false, name = "metricType") String metricType,
+            @RequestParam(required = false, name = "startTime") Long startTime,
+            @RequestParam(required = false, name = "endTime") Long endTime) {
         try {
             Map<String, Object> metrics = systemService.getSystemMetrics(
                     metricType, startTime, endTime);
@@ -107,7 +107,7 @@ public class SystemController {
      */
     @PostMapping("/cache/clear")
     public Result<Map<String, Object>> clearCache(
-            @RequestParam(required = false) String cacheType) {
+            @RequestParam(required = false, name = "cacheType") String cacheType) {
         try {
             Map<String, Object> result = systemService.clearCache(cacheType);
             return Result.success(result);
@@ -121,7 +121,7 @@ public class SystemController {
      */
     @PostMapping("/backup")
     public Result<Map<String, Object>> backupData(
-            @RequestParam(required = false) String backupType) {
+            @RequestParam(required = false, name = "backupType") String backupType) {
         try {
             Map<String, Object> result = systemService.backupData(backupType);
             return Result.success(result);
@@ -136,7 +136,7 @@ public class SystemController {
     @PostMapping("/restore")
     public Result<Map<String, Object>> restoreData(
             @RequestParam String backupFile,
-            @RequestParam(required = false) Boolean cleanRestore) {
+            @RequestParam(required = false, name = "cleanRestore") Boolean cleanRestore) {
         try {
             Map<String, Object> result = systemService.restoreData(backupFile, cleanRestore);
             return Result.success(result);
@@ -163,7 +163,7 @@ public class SystemController {
      */
     @PostMapping("/restart")
     public Result<Map<String, Object>> restartService(
-            @RequestParam(required = false) String serviceName) {
+            @RequestParam(required = false, name = "serviceName") String serviceName) {
         try {
             Map<String, Object> result = systemService.restartService(serviceName);
             return Result.success(result);

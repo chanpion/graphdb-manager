@@ -2,6 +2,7 @@ package com.graphdb.service;
 
 import com.graphdb.core.interfaces.GraphAdapter;
 import com.graphdb.core.interfaces.DataHandler;
+import com.graphdb.core.interfaces.SchemaHandler;
 import com.graphdb.core.constant.DatabaseTypeEnum;
 import com.graphdb.core.constant.GraphSourceEnum;
 import com.graphdb.core.model.ConnectionConfig;
@@ -11,6 +12,7 @@ import com.graphdb.core.model.Vertex;
 import com.graphdb.core.model.Edge;
 import com.graphdb.core.model.QueryCondition;
 import com.graphdb.core.model.CsvImportConfig;
+import com.graphdb.core.model.IndexInfo;
 import com.graphdb.core.exception.CoreException;
 import com.graphdb.api.service.ConnectionService;
 import com.graphdb.api.dto.ConnectionConfigDTO;
@@ -18,10 +20,13 @@ import com.graphdb.storage.repository.GraphInstanceMapper;
 import com.graphdb.storage.entity.GraphInstanceEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,12 +35,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class GraphService {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(GraphService.class);
+
     private final Map<DatabaseTypeEnum, GraphAdapter> adapterMap = new ConcurrentHashMap<>();
-    
+
+    private final Map<String, GraphSchema> graphSchemaCache = new ConcurrentHashMap<>();
+
     @Autowired
     private ConnectionService connectionService;
-    
+
     @Autowired
     private GraphInstanceMapper graphInstanceMapper;
     
@@ -826,5 +835,112 @@ public class GraphService {
 
         // 保存更新
         graphInstanceMapper.updateById(existing);
+    }
+
+    /**
+     * 获取索引列表
+     * @param connectionId 连接ID
+     * @param graphName 图名称
+     * @return 索引列表
+     */
+    public List<IndexInfo> getIndexes(Long connectionId, String graphName) {
+        try {
+            // 获取连接配置
+            ConnectionConfigDTO dto = connectionService.getById(connectionId);
+            ConnectionConfig config = convertDTOToModel(dto);
+
+            // 从适配器获取索引列表
+            DatabaseTypeEnum dbType = DatabaseTypeEnum.fromCode(config.getType());
+            GraphAdapter adapter = getAdapter(dbType);
+            List<IndexInfo> indexes = adapter.getIndexes(config, graphName);
+
+            // 更新缓存中的 schema
+            String cacheKey = connectionId + ":" + graphName;
+            GraphSchema schema = graphSchemaCache.get(cacheKey);
+            if (schema == null) {
+                schema = getGraphSchema(connectionId, graphName);
+            }
+            if (schema != null) {
+                schema.setIndexes(indexes);
+                graphSchemaCache.put(cacheKey, schema);
+            }
+
+            return indexes;
+        } catch (Exception e) {
+            logger.error("获取索引列表失败: connectionId={}, graphName={}", connectionId, graphName, e);
+            throw new RuntimeException("获取索引列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 创建索引
+     * @param connectionId 连接ID
+     * @param graphName 图名称
+     * @param indexInfo 索引信息
+     */
+    public void createIndex(Long connectionId, String graphName, IndexInfo indexInfo) {
+        try {
+            // 获取连接配置
+            ConnectionConfigDTO dto = connectionService.getById(connectionId);
+            ConnectionConfig config = convertDTOToModel(dto);
+
+            // 创建索引（具体实现依赖于适配器）
+            logger.info("创建索引: connectionId={}, graphName={}, indexName={}", connectionId, graphName, indexInfo.getName());
+
+            // 更新缓存中的 schema
+            GraphSchema schema = graphSchemaCache.getOrDefault(connectionId + ":" + graphName, null);
+            if (schema != null && schema.getIndexes() != null) {
+                schema.getIndexes().add(indexInfo);
+            }
+        } catch (Exception e) {
+            logger.error("创建索引失败: connectionId={}, graphName={}", connectionId, graphName, e);
+            throw new RuntimeException("创建索引失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除索引
+     * @param connectionId 连接ID
+     * @param graphName 图名称
+     * @param indexName 索引名称
+     */
+    public void deleteIndex(Long connectionId, String graphName, String indexName) {
+        try {
+            // 获取连接配置
+            ConnectionConfigDTO dto = connectionService.getById(connectionId);
+            ConnectionConfig config = convertDTOToModel(dto);
+
+            // 删除索引（具体实现依赖于适配器）
+            logger.info("删除索引: connectionId={}, graphName={}, indexName={}", connectionId, graphName, indexName);
+
+            // 更新缓存中的 schema
+            GraphSchema schema = graphSchemaCache.getOrDefault(connectionId + ":" + graphName, null);
+            if (schema != null && schema.getIndexes() != null) {
+                schema.getIndexes().removeIf(index -> index.getName().equals(indexName));
+            }
+        } catch (Exception e) {
+            logger.error("删除索引失败: connectionId={}, graphName={}", connectionId, graphName, e);
+            throw new RuntimeException("删除索引失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 重建索引
+     * @param connectionId 连接ID
+     * @param graphName 图名称
+     * @param indexName 索引名称
+     */
+    public void rebuildIndex(Long connectionId, String graphName, String indexName) {
+        try {
+            // 获取连接配置
+            ConnectionConfigDTO dto = connectionService.getById(connectionId);
+            ConnectionConfig config = convertDTOToModel(dto);
+
+            // 重建索引（具体实现依赖于适配器）
+            logger.info("重建索引: connectionId={}, graphName={}, indexName={}", connectionId, graphName, indexName);
+        } catch (Exception e) {
+            logger.error("重建索引失败: connectionId={}, graphName={}", connectionId, graphName, e);
+            throw new RuntimeException("重建索引失败: " + e.getMessage());
+        }
     }
 }

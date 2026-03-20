@@ -43,7 +43,7 @@
           <el-icon><Refresh /></el-icon>
           刷新
         </el-button>
-        <el-button type="primary" @click="showCreateDialog" :disabled="!selectedConnectionId">
+        <el-button type="primary" @click="showCreateDialog" :disabled="connections.length === 0">
           <el-icon><Plus /></el-icon>
           新建图
         </el-button>
@@ -55,6 +55,7 @@
         v-for="graph in displayGraphs"
         :key="graph.name"
         :graph="graph"
+        @click="openGraph"
         @open="openGraph"
         @edit="handleEdit"
         @detail="showDetail"
@@ -80,8 +81,26 @@
       width="500px"
     >
       <el-form :model="createForm" label-width="100px">
+        <el-form-item label="连接" required>
+          <el-select v-model="createForm.connectionId" placeholder="请选择连接" style="width: 100%;">
+            <el-option
+              v-for="conn in connections"
+              :key="conn.id"
+              :label="conn.name"
+              :value="conn.id"
+            >
+              <span>{{ conn.name }}</span>
+              <el-tag :type="conn.status === 1 ? 'success' : 'danger'" size="small" style="margin-left: 8px;">
+                {{ conn.status === 1 ? '正常' : '异常' }}
+              </el-tag>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="图标识" required>
+          <el-input v-model="createForm.graphName" placeholder="请输入图标识（英文）" />
+        </el-form-item>
         <el-form-item label="图名称" required>
-          <el-input v-model="createForm.graphName" placeholder="请输入图名称" />
+          <el-input v-model="createForm.graphDisplayName" placeholder="请输入图名称（中文）" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -205,13 +224,14 @@ import { ref, reactive, onMounted, onUnmounted, computed, watch, nextTick } from
 import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Plus, Loading } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import GraphCard from '../components/graph/GraphCard.vue'
 import { connectionApi } from '../api/connection'
 import { useGraphStore } from '../stores/graph'
 
 // 使用路由
 const router = useRouter()
+const route = useRoute()
 
 // 使用graph store
 const graphStore = useGraphStore()
@@ -257,7 +277,9 @@ const sourceTypes = [
 ]
 
 const createForm = reactive({
-  graphName: ''
+  connectionId: '',
+  graphName: '',
+  graphDisplayName: ''
 })
 
 const editForm = reactive({
@@ -345,24 +367,57 @@ const loadGraphs = async () => {
 }
 
 const showCreateDialog = () => {
+  createForm.connectionId = selectedConnectionId.value || ''
   createForm.graphName = ''
+  createForm.graphDisplayName = ''
   createDialogVisible.value = true
 }
 
 const handleCreate = async () => {
+  if (!createForm.connectionId) {
+    ElMessage.warning('请选择连接')
+    return
+  }
+  
   if (!createForm.graphName.trim()) {
+    ElMessage.warning('请输入图标识')
+    return
+  }
+  
+  if (!createForm.graphDisplayName.trim()) {
     ElMessage.warning('请输入图名称')
+    return
+  }
+  
+  // 验证图标识格式（只允许字母、数字、下划线）
+  const graphNameRegex = /^[a-zA-Z0-9_]+$/
+  if (!graphNameRegex.test(createForm.graphName)) {
+    ElMessage.warning('图标识只能包含字母、数字和下划线')
     return
   }
   
   creating.value = true
   try {
-    await graphStore.createGraph({ graphName: createForm.graphName })
+    // 临时设置选中的连接 ID
+    const originalConnectionId = selectedConnectionId.value
+    selectedConnectionId.value = createForm.connectionId
+    
+    await graphStore.createGraph({ 
+      graphName: createForm.graphName,
+      graphDisplayName: createForm.graphDisplayName
+    })
+    
     ElMessage.success('图创建成功')
     createDialogVisible.value = false
+    
+    // 恢复原始连接 ID
+    selectedConnectionId.value = originalConnectionId
+    
+    // 刷新图列表
+    await loadGraphs()
   } catch (error) {
     console.error('创建图失败:', error)
-    ElMessage.error('创建图失败')
+    ElMessage.error('创建图失败：' + (error.message || error))
   } finally {
     creating.value = false
   }
@@ -410,14 +465,15 @@ const handleUpdateEdit = async () => {
 
 const showDetail = (graph) => {
   // 设置当前选中的连接和图
-  // 检查graph是否为对象，防止在字符串上使用可选链
+  // 检查 graph 是否为对象，防止在字符串上使用可选链
   if (typeof graph !== 'object' || graph === null) {
     console.warn('showDetail received non-object parameter:', graph)
     return
   }
   
+  const graphName = graph?.name || graph?.graphName
   selectedConnectionId.value = graph?.connectionId || selectedConnectionId.value
-  selectedGraphName.value = graph?.name
+  selectedGraphName.value = graphName
 
   currentGraphDetail.value = {
     ...graph,
@@ -430,14 +486,15 @@ const showDetail = (graph) => {
 const openGraph = (graph) => {
   // 设置当前选中的连接和图
   selectedConnectionId.value = graph.connectionId || selectedConnectionId.value
-  selectedGraphName.value = graph.name
+  const graphName = graph.name || graph.graphName
+  selectedGraphName.value = graphName
 
   // 跳转到图建模页面
   router.push({
     name: 'DataModeling',
     query: {
       connectionId: graph.connectionId || selectedConnectionId.value,
-      graphName: graph.name
+      graphName: graphName
     }
   })
 }
@@ -445,14 +502,15 @@ const openGraph = (graph) => {
 const browseGraph = (graph) => {
   // 设置当前选中的连接和图
   selectedConnectionId.value = graph.connectionId || selectedConnectionId.value
-  selectedGraphName.value = graph.name
+  const graphName = graph.name || graph.graphName
+  selectedGraphName.value = graphName
 
   // 跳转到图数据页面
   router.push({
     name: 'DataExplorer',
     query: {
       connectionId: graph.connectionId || selectedConnectionId.value,
-      graphName: graph.name
+      graphName: graphName
     }
   })
 }
@@ -460,9 +518,15 @@ const browseGraph = (graph) => {
 const handleEdit = (graphData) => {
   // 支持传入图对象或图名称
   const graph = typeof graphData === 'string' ? { name: graphData } : graphData
-  const graphName = graph?.name
+  const graphName = graph?.name || graph?.graphName
   const description = graph?.description || ''
   const connectionId = graph?.connectionId || ''
+  
+  if (!graphName) {
+    console.error('无法获取图名称:', graph)
+    ElMessage.error('图名称无效')
+    return
+  }
   
   // 设置编辑表单的值
   editForm.graphName = graphName || ''
@@ -482,7 +546,13 @@ const getConnectionNameById = (connectionId) => {
 
 const deleteGraph = async (graph) => {
   // 支持传入图对象或图名称
-  const graphName = typeof graph === 'string' ? graph : graph?.name
+  const graphName = typeof graph === 'string' ? graph : (graph?.name || graph?.graphName)
+  
+  if (!graphName) {
+    console.error('无法获取图名称:', graph)
+    ElMessage.error('图名称无效')
+    return
+  }
 
   try {
     await ElMessageBox.confirm(`确定删除图 "${graphName}" 吗？`, '警告', {
@@ -516,7 +586,12 @@ watch(() => window.innerWidth, () => {
 
 onMounted(async () => {
   await loadConnections()
-  // 组件挂载后加载所有图（因为默认selectedConnectionId为空）
+  // 检查路由参数中是否有连接ID
+  const connectionIdFromRoute = route.query.connectionId
+  if (connectionIdFromRoute) {
+    selectedConnectionId.value = connectionIdFromRoute
+  }
+  // 组件挂载后加载图
   await loadGraphs()
   // 等待DOM更新后添加滚动监听
   await nextTick()

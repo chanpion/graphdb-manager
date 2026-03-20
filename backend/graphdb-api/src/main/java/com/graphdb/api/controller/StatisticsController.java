@@ -79,7 +79,7 @@ public class StatisticsController {
     public Result<Map<String, Object>> getDegreeDistribution(
             @PathVariable Long connectionId,
             @PathVariable String graphName,
-            @RequestParam(required = false) String nodeType) {
+            @RequestParam(required = false, name = "nodeType") String nodeType) {
         try {
             Map<String, Object> distribution = statisticsService.getDegreeDistribution(
                     connectionId, graphName, nodeType);
@@ -128,8 +128,8 @@ public class StatisticsController {
     public Result<Map<String, Object>> getShortestPathStatistics(
             @PathVariable Long connectionId,
             @PathVariable String graphName,
-            @RequestParam(required = false) String sourceUid,
-            @RequestParam(required = false) String targetUid) {
+            @RequestParam(required = false, name = "sourceUid") String sourceUid,
+            @RequestParam(required = false, name = "targetUid") String targetUid) {
         try {
             Map<String, Object> pathStats = statisticsService.getShortestPathStatistics(
                     connectionId, graphName, sourceUid, targetUid);
@@ -146,7 +146,7 @@ public class StatisticsController {
     public Result<Map<String, Object>> getCentralityMetrics(
             @PathVariable Long connectionId,
             @PathVariable String graphName,
-            @RequestParam(required = false) String metricType) {
+            @RequestParam(required = false, name = "metricType") String metricType) {
         try {
             Map<String, Object> centrality = statisticsService.getCentralityMetrics(
                     connectionId, graphName, metricType);
@@ -179,8 +179,8 @@ public class StatisticsController {
     public Result<Map<String, Object>> getEvolutionTrend(
             @PathVariable Long connectionId,
             @PathVariable String graphName,
-            @RequestParam(required = false) Long startTime,
-            @RequestParam(required = false) Long endTime) {
+            @RequestParam(required = false, name = "startTime") Long startTime,
+            @RequestParam(required = false, name = "endTime") Long endTime) {
         try {
             Map<String, Object> trend = statisticsService.getEvolutionTrend(
                     connectionId, graphName, startTime, endTime);

@@ -72,7 +72,7 @@ public class NativeQueryController {
     public Result<List<Map<String, Object>>> getQueryTemplates(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "模板分类") @RequestParam(required = false) String category) {
+            @Parameter(description = "模板分类") @RequestParam(required = false, name = "category") String category) {
         try {
             List<Map<String, Object>> templates = nativeQueryService.getQueryTemplates(
                     connectionId, graphName, category);

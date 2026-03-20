@@ -10,6 +10,7 @@ import com.graphdb.core.model.CsvImportConfig;
 import com.graphdb.core.model.Edge;
 import com.graphdb.core.model.GraphQueryResult;
 import com.graphdb.core.model.GraphSchema;
+import com.graphdb.core.model.IndexInfo;
 import com.graphdb.core.model.LabelType;
 import com.graphdb.core.model.Vertex;
 import com.vesoft.nebula.client.graph.NebulaPoolConfig;
@@ -627,6 +628,49 @@ public class NebulaAdapter implements GraphAdapter, SchemaHandler, DataHandler {
             return edgeTypes;
         } catch (Exception e) {
             throw new CoreException("获取Nebula边类型列表失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<IndexInfo> getIndexes(ConnectionConfig config, String graphName) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+
+        try {
+            // 切换到指定图空间
+            if (graphName != null && !graphName.isEmpty()) {
+                session.execute("USE `" + graphName + "`");
+                currentGraph = graphName;
+            }
+
+            List<IndexInfo> indexes = new ArrayList<>();
+
+            // 获取Tag索引
+            ResultSet tagIndexResult = session.execute("SHOW TAG INDEXES");
+            if (tagIndexResult.isSucceeded()) {
+                for (int i = 0; i < tagIndexResult.rowsSize(); i++) {
+                    IndexInfo indexInfo = new IndexInfo();
+                    indexInfo.setName(tagIndexResult.rowValues(i).get(0).asString());
+                    indexInfo.setType("TAG_INDEX");
+                    indexes.add(indexInfo);
+                }
+            }
+
+            // 获取Edge索引
+            ResultSet edgeIndexResult = session.execute("SHOW EDGE INDEXES");
+            if (edgeIndexResult.isSucceeded()) {
+                for (int i = 0; i < edgeIndexResult.rowsSize(); i++) {
+                    IndexInfo indexInfo = new IndexInfo();
+                    indexInfo.setName(edgeIndexResult.rowValues(i).get(0).asString());
+                    indexInfo.setType("EDGE_INDEX");
+                    indexes.add(indexInfo);
+                }
+            }
+
+            return indexes;
+        } catch (Exception e) {
+            throw new CoreException("获取Nebula索引列表失败: " + e.getMessage(), e);
         }
     }
 

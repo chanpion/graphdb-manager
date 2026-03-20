@@ -5,6 +5,7 @@ import com.graphdb.core.model.ConnectionConfig;
 import com.graphdb.core.model.GraphSchema;
 import com.graphdb.core.model.LabelType;
 import com.graphdb.core.model.GraphQueryResult;
+import com.graphdb.core.model.IndexInfo;
 import com.graphdb.core.exception.CoreException;
 import java.util.List;
 
@@ -132,6 +133,15 @@ public interface GraphAdapter {
      * @throws CoreException 操作异常
      */
     List<LabelType> getEdgeTypes(ConnectionConfig config, String graphName) throws CoreException;
+
+    /**
+     * 获取索引列表
+     * @param config 连接配置
+     * @param graphName 图名称
+     * @return 索引列表
+     * @throws CoreException 操作异常
+     */
+    List<IndexInfo> getIndexes(ConnectionConfig config, String graphName) throws CoreException;
     
     /**
      * 执行原生查询

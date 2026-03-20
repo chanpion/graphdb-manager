@@ -13,6 +13,8 @@ import com.graphdb.core.model.GraphSchema;
 import com.graphdb.core.model.LabelType;
 import com.graphdb.core.model.PropertyDefinition;
 import com.graphdb.core.model.Vertex;
+import com.graphdb.core.model.IndexInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -27,10 +29,14 @@ import org.neo4j.driver.types.Relationship;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -163,29 +169,29 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<LabelType> getVertexLabelsWithProperties() {
         List<LabelType> vertexLabelTypes = new ArrayList<>();
-        
+
         try {
             // 使用 Neo4j 的 db.schema.nodeTypeProperties 获取节点类型及属性
             String schemaQuery = "CALL db.schema.nodeTypeProperties()";
             Result schemaResult = session.run(schemaQuery);
-            
+
             // 按节点类型分组属性
             Map<String, List<PropertyDefinition>> labelPropertiesMap = new HashMap<>();
-            
+
             for (Record record : schemaResult.list()) {
-                String nodeType = record.get("nodeType").asString();
+                String nodeType = StringUtils.substringBetween(record.get("nodeType").asString(), "`", "`");
                 String propertyName = record.get("propertyName").asString();
                 String propertyTypes = record.get("propertyTypes").asList().get(0).toString();
                 boolean optional = record.get("mandatory").asBoolean();
-                
+
                 PropertyDefinition propDef = new PropertyDefinition();
                 propDef.setName(propertyName);
-                propDef.setType(mapNeo4jTypeToCommonType(propertyTypes));
+                propDef.setDataType(mapNeo4jTypeToCommonType(propertyTypes));
                 propDef.setRequired(!optional);
-                
+
                 labelPropertiesMap.computeIfAbsent(nodeType, k -> new ArrayList<>()).add(propDef);
             }
-            
+
             // 转换为LabelType列表
             for (Map.Entry<String, List<PropertyDefinition>> entry : labelPropertiesMap.entrySet()) {
                 LabelType labelType = new LabelType();
@@ -195,13 +201,13 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
                 labelType.setProperties(entry.getValue());
                 vertexLabelTypes.add(labelType);
             }
-            
+
         } catch (Exception e) {
             System.out.println("db.schema.nodeTypeProperties 执行失败: " + e.getMessage() + "，尝试备用方法");
             // 备用方法：使用 db.labels() 获取标签，然后查询每个标签的属性
             return getVertexLabelsWithPropertiesFallback();
         }
-        
+
         return vertexLabelTypes;
     }
 
@@ -210,28 +216,28 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<LabelType> getVertexLabelsWithPropertiesFallback() {
         List<LabelType> vertexLabelTypes = new ArrayList<>();
-        
+
         try {
             String nodeLabelsQuery = "CALL db.labels() YIELD label RETURN label";
             Result result = session.run(nodeLabelsQuery);
             List<String> nodeLabels = result.list(record -> record.get("label").asString());
-            
+
             for (String label : nodeLabels) {
                 LabelType labelType = new LabelType();
                 labelType.setName(label);
                 labelType.setType("VERTEX");
                 labelType.setDescription("Neo4j节点标签: " + label);
-                
+
                 // 查询该标签的属性
                 List<PropertyDefinition> properties = getVertexPropertiesByLabel(label);
                 labelType.setProperties(properties);
-                
+
                 vertexLabelTypes.add(labelType);
             }
         } catch (Exception e) {
             System.out.println("获取节点标签失败: " + e.getMessage());
         }
-        
+
         return vertexLabelTypes;
     }
 
@@ -241,29 +247,29 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<LabelType> getEdgeLabelsWithProperties() {
         List<LabelType> edgeLabelTypes = new ArrayList<>();
-        
+
         try {
             // 使用 Neo4j 的 db.schema.relTypeProperties 获取边类型及属性
             String schemaQuery = "CALL db.schema.relTypeProperties()";
             Result schemaResult = session.run(schemaQuery);
-            
+
             // 按边类型分组属性
             Map<String, List<PropertyDefinition>> relPropertiesMap = new HashMap<>();
-            
+
             for (Record record : schemaResult.list()) {
-                String relType = record.get("relType").asString();
+                String relType = StringUtils.substringBetween(record.get("relType").asString(), "`", "`");
                 String propertyName = record.get("propertyName").asString();
                 String propertyTypes = record.get("propertyTypes").asList().get(0).toString();
                 boolean optional = record.get("mandatory").asBoolean();
-                
+
                 PropertyDefinition propDef = new PropertyDefinition();
                 propDef.setName(propertyName);
-                propDef.setType(mapNeo4jTypeToCommonType(propertyTypes));
+                propDef.setDataType(mapNeo4jTypeToCommonType(propertyTypes));
                 propDef.setRequired(!optional);
-                
+
                 relPropertiesMap.computeIfAbsent(relType, k -> new ArrayList<>()).add(propDef);
             }
-            
+
             // 转换为LabelType列表
             for (Map.Entry<String, List<PropertyDefinition>> entry : relPropertiesMap.entrySet()) {
                 LabelType labelType = new LabelType();
@@ -273,13 +279,13 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
                 labelType.setProperties(entry.getValue());
                 edgeLabelTypes.add(labelType);
             }
-            
+
         } catch (Exception e) {
             System.out.println("db.schema.relTypeProperties 执行失败: " + e.getMessage() + "，尝试备用方法");
             // 备用方法：使用 db.relationshipTypes() 获取类型，然后查询每个类型的属性
             return getEdgeLabelsWithPropertiesFallback();
         }
-        
+
         return edgeLabelTypes;
     }
 
@@ -288,28 +294,28 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<LabelType> getEdgeLabelsWithPropertiesFallback() {
         List<LabelType> edgeLabelTypes = new ArrayList<>();
-        
+
         try {
             String relTypesQuery = "CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType";
             Result result = session.run(relTypesQuery);
             List<String> relTypes = result.list(record -> record.get("relationshipType").asString());
-            
+
             for (String relType : relTypes) {
                 LabelType labelType = new LabelType();
                 labelType.setName(relType);
                 labelType.setType("EDGE");
                 labelType.setDescription("Neo4j关系类型: " + relType);
-                
+
                 // 查询该关系类型的属性
                 List<PropertyDefinition> properties = getEdgePropertiesByType(relType);
                 labelType.setProperties(properties);
-                
+
                 edgeLabelTypes.add(labelType);
             }
         } catch (Exception e) {
             System.out.println("获取边类型失败: " + e.getMessage());
         }
-        
+
         return edgeLabelTypes;
     }
 
@@ -318,42 +324,42 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<PropertyDefinition> getVertexPropertiesByLabel(String label) {
         List<PropertyDefinition> properties = new ArrayList<>();
-        
+
         try {
             // 查询具有该标签的一个节点，获取其属性键
             String query = String.format("MATCH (n:%s) RETURN keys(n) AS keys LIMIT 1", label);
             Result result = session.run(query);
-            
+
             if (result.hasNext()) {
                 Record record = result.next();
                 List<String> propertyKeys = record.get("keys").asList(Value::asString);
-                
+
                 // 获取每个属性的数据类型
                 for (String key : propertyKeys) {
                     String typeQuery = String.format(
-                        "MATCH (n:%s) WHERE n.%s IS NOT NULL RETURN typeof(n.%s) AS type LIMIT 1",
-                        label, key, key
+                            "MATCH (n:%s) WHERE n.%s IS NOT NULL RETURN typeof(n.%s) AS type LIMIT 1",
+                            label, key, key
                     );
                     Result typeResult = session.run(typeQuery);
-                    
+
                     PropertyDefinition propDef = new PropertyDefinition();
                     propDef.setName(key);
                     propDef.setRequired(false);
-                    
+
                     if (typeResult.hasNext()) {
                         String neo4jType = typeResult.next().get("type").asString();
-                        propDef.setType(mapNeo4jTypeToCommonType(neo4jType));
+                        propDef.setDataType(mapNeo4jTypeToCommonType(neo4jType));
                     } else {
-                        propDef.setType("STRING");
+                        propDef.setDataType("STRING");
                     }
-                    
+
                     properties.add(propDef);
                 }
             }
         } catch (Exception e) {
             System.out.println("获取节点属性失败 (" + label + "): " + e.getMessage());
         }
-        
+
         return properties;
     }
 
@@ -362,45 +368,45 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
      */
     private List<PropertyDefinition> getEdgePropertiesByType(String relType) {
         List<PropertyDefinition> properties = new ArrayList<>();
-        
+
         try {
             // 查询具有该关系的一条边，获取其属性键
             String query = String.format(
-                "MATCH ()-[r:%s]->() RETURN keys(r) AS keys LIMIT 1",
-                relType
+                    "MATCH ()-[r:%s]->() RETURN keys(r) AS keys LIMIT 1",
+                    relType
             );
             Result result = session.run(query);
-            
+
             if (result.hasNext()) {
                 Record record = result.next();
                 List<String> propertyKeys = record.get("keys").asList(Value::asString);
-                
+
                 // 获取每个属性的数据类型
                 for (String key : propertyKeys) {
                     String typeQuery = String.format(
-                        "MATCH ()-[r:%s]->() WHERE r.%s IS NOT NULL RETURN typeof(r.%s) AS type LIMIT 1",
-                        relType, key, key
+                            "MATCH ()-[r:%s]->() WHERE r.%s IS NOT NULL RETURN typeof(r.%s) AS type LIMIT 1",
+                            relType, key, key
                     );
                     Result typeResult = session.run(typeQuery);
-                    
+
                     PropertyDefinition propDef = new PropertyDefinition();
                     propDef.setName(key);
                     propDef.setRequired(false);
-                    
+
                     if (typeResult.hasNext()) {
                         String neo4jType = typeResult.next().get("type").asString();
-                        propDef.setType(mapNeo4jTypeToCommonType(neo4jType));
+                        propDef.setDataType(mapNeo4jTypeToCommonType(neo4jType));
                     } else {
-                        propDef.setType("STRING");
+                        propDef.setDataType("STRING");
                     }
-                    
+
                     properties.add(propDef);
                 }
             }
         } catch (Exception e) {
             System.out.println("获取边属性失败 (" + relType + "): " + e.getMessage());
         }
-        
+
         return properties;
     }
 
@@ -411,7 +417,7 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
         if (neo4jType == null) {
             return "STRING";
         }
-        
+
         switch (neo4jType.toUpperCase()) {
             case "INTEGER":
             case "INTEGER NOT NULL":
@@ -448,29 +454,29 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
     @SuppressWarnings("unchecked")
     private List<PropertyDefinition> convertPropertiesList(List<?> propertiesList) {
         List<PropertyDefinition> properties = new ArrayList<>();
-        
+
         if (propertiesList == null) {
             return properties;
         }
-        
+
         for (Object propObj : propertiesList) {
             PropertyDefinition propDef = new PropertyDefinition();
-            
+
             if (propObj instanceof String) {
                 // 属性只有名称
                 propDef.setName((String) propObj);
-                propDef.setType("STRING");
+                propDef.setDataType("STRING");
                 propDef.setRequired(false);
             } else if (propObj instanceof Map) {
                 Map<String, ?> propMap = (Map<String, ?>) propObj;
                 propDef.setName((String) propMap.get("property"));
-                propDef.setType(mapNeo4jTypeToCommonType((String) propMap.get("type")));
+                propDef.setDataType(mapNeo4jTypeToCommonType((String) propMap.get("type")));
                 propDef.setRequired(false);
             }
-            
+
             properties.add(propDef);
         }
-        
+
         return properties;
     }
 
@@ -651,7 +657,7 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
                 labelType.setDescription("Neo4j节点标签: " + labelName);
                 vertexTypes.add(labelType);
             }
-
+            vertexTypes = getVertexLabelsWithProperties();
             return vertexTypes;
         } catch (Exception e) {
             throw new CoreException("获取Neo4j点类型列表失败: " + e.getMessage(), e);
@@ -1373,6 +1379,57 @@ public class Neo4jAdapter implements GraphAdapter, DataHandler, SchemaHandler {
             return record.get("count").asLong();
         } catch (Exception e) {
             throw new CoreException("统计 Neo4j 边数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<IndexInfo> getIndexes(ConnectionConfig config, String graphName) throws CoreException {
+        if (!isConnected()) {
+            connect(config);
+        }
+
+        try {
+            List<IndexInfo> indexes = new ArrayList<>();
+
+            // 使用 SHOW INDEXES 命令获取所有索引
+            String query = "SHOW INDEXES";
+            Result result = session.run(query);
+
+            for (Record record : result.list()) {
+                IndexInfo index = new IndexInfo();
+
+                // 获取索引名称
+                String indexName = record.get("name").asString();
+                index.setName(indexName);
+
+                String entityType = record.get("entityType").asString();
+                index.setLabelType(entityType);
+
+                // 获取索引类型（唯一索引或普通索引）
+                boolean isUnique = record.get("owningConstraint") != null;
+                String indexType = isUnique ? "UNIQUE" : "COMPOUND";
+                index.setType(indexType);
+                index.setUnique(isUnique);
+
+            // 获取索引字段
+            List<String> fields = new ArrayList<>();
+            List<?> tokens = record.get("labelsOrTypes").asList(Collections.emptyList());
+            if (!tokens.isEmpty()) {
+                index.setLabel(tokens.get(0).toString());
+            }
+            // 获取属性字段
+            if (record.containsKey("properties") && record.get("properties") != null) {
+                List<String> properties = record.get("properties").asList(Value::asString, Collections.emptyList());
+                fields.addAll(properties);
+            }
+            index.setFields(fields.toArray(new String[0]));
+
+            indexes.add(index);
+            }
+
+            return indexes;
+        } catch (Exception e) {
+            throw new CoreException("获取Neo4j索引列表失败：" + e.getMessage(), e);
         }
     }
 }

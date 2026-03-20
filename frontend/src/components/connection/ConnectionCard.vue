@@ -77,10 +77,10 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'test', 'edit', 'delete'])
 
-// 获取数据库类型，兼容旧的type字段和新的databaseType字段
+// 获取数据库类型，统一使用 type 字段
 const connectionType = computed(() => {
   if (!props.connection) return 'UNKNOWN'
-  return props.connection.databaseType || props.connection.type || 'UNKNOWN'
+  return props.connection.type || 'UNKNOWN'
 })
 
 const iconComponent = computed(() => {

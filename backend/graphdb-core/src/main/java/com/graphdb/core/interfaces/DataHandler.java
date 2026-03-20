@@ -110,4 +110,22 @@ public interface DataHandler {
      * @throws CoreException 查询异常
      */
     Map<String, Object> executeNativeQuery(String graphName, String query, DatabaseTypeEnum dbType);
+    
+    /**
+     * 统计节点数量
+     * @param graphName 图名称
+     * @param label 节点标签（可选，为 null 时统计所有节点）
+     * @return 节点数量
+     * @throws CoreException 统计异常
+     */
+    Long countVertices(String graphName, String label);
+    
+    /**
+     * 统计边数量
+     * @param graphName 图名称
+     * @param label 边标签（可选，为 null 时统计所有边）
+     * @return 边数量
+     * @throws CoreException 统计异常
+     */
+    Long countEdges(String graphName, String label);
 }

@@ -101,105 +101,42 @@ export const graphApi = {
 
   // 索引管理
   listIndexes(connectionId, graphName) {
-    // TODO: 调用真实API
-    // return request({
-    //   method: 'get',
-    //   url: `/connections/${connectionId}/graphs/${graphName}/indexes`
-    // })
-    
-    // 临时模拟数据
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockData = [
-          {
-            name: 'idx_user_email',
-            type: 'UNIQUE',
-            fields: ['email'],
-            status: 'ACTIVE',
-            createTime: '2024-01-15 10:30:00',
-            description: '用户邮箱唯一索引'
-          },
-          {
-            name: 'idx_user_name_age',
-            type: 'COMPOUND',
-            fields: ['name', 'age'],
-            status: 'ACTIVE',
-            createTime: '2024-01-16 14:20:00',
-            description: '用户名和年龄复合索引'
-          },
-          {
-            name: 'idx_article_content',
-            type: 'FULLTEXT',
-            fields: ['content'],
-            status: 'BUILDING',
-            createTime: '2024-01-17 09:15:00',
-            description: '文章内容全文索引'
-          },
-          {
-            name: 'idx_location',
-            type: 'SPATIAL',
-            fields: ['latitude', 'longitude'],
-            status: 'ACTIVE',
-            createTime: '2024-01-18 16:45:00',
-            description: '地理位置空间索引'
-          }
-        ]
-        resolve({ data: mockData })
-      }, 500)
+    return request({
+      method: 'get',
+      url: `/connections/${connectionId}/graphs/${graphName}/indexes`
     })
   },
 
   createIndex(connectionId, graphName, data) {
-    // TODO: 调用真实API
-    // return request({
-    //   method: 'post',
-    //   url: `/connections/${connectionId}/graphs/${graphName}/indexes`,
-    //   data
-    // })
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: { success: true, message: '索引创建成功' } })
-      }, 800)
+    return request({
+      method: 'post',
+      url: `/connections/${connectionId}/graphs/${graphName}/indexes`,
+      data
     })
   },
 
   deleteIndex(connectionId, graphName, indexName) {
-    // TODO: 调用真实API
-    // return request({
-    //   method: 'delete',
-    //   url: `/connections/${connectionId}/graphs/${graphName}/indexes/${indexName}`
-    // })
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: { success: true, message: '索引删除成功' } })
-      }, 500)
+    return request({
+      method: 'delete',
+      url: `/connections/${connectionId}/graphs/${graphName}/indexes/${indexName}`
     })
   },
 
   rebuildIndex(connectionId, graphName, indexName) {
-    // TODO: 调用真实API
-    // return request({
-    //   method: 'post',
-    //   url: `/connections/${connectionId}/graphs/${graphName}/indexes/${indexName}/rebuild`
-    // })
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: { success: true, message: '索引重建已开始' } })
-      }, 800)
+    return request({
+      method: 'post',
+      url: `/connections/${connectionId}/graphs/${graphName}/indexes/${indexName}/rebuild`
     })
   },
 
   // 导出任务管理
   listExportTasks(connectionId, graphName) {
-    // TODO: 调用真实API
+    // TODO: 调用真实 API
     // return request({
     //   method: 'get',
     //   url: `/connections/${connectionId}/graphs/${graphName}/export-tasks`
     // })
-    
+      
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockData = [
@@ -265,63 +202,61 @@ export const graphApi = {
             downloadUrl: null
           }
         ]
-        resolve({ data: mockData })
+        resolve(mockData)
       }, 500)
     })
   },
 
   createExportTask(connectionId, graphName, data) {
-    // TODO: 调用真实API
+    // TODO: 调用真实 API
     // return request({
     //   method: 'post',
     //   url: `/connections/${connectionId}/graphs/${graphName}/export-tasks`,
     //   data
     // })
-    
+      
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({ 
-          data: { 
-            success: true, 
-            message: '导出任务创建成功',
-            taskId: `exp_${Date.now()}`
-          } 
+          success: true, 
+          message: '导出任务创建成功',
+          taskId: `exp_${Date.now()}`
         })
       }, 800)
     })
   },
 
   deleteExportTask(connectionId, graphName, taskId) {
-    // TODO: 调用真实API
+    // TODO: 调用真实 API
     // return request({
     //   method: 'delete',
     //   url: `/connections/${connectionId}/graphs/${graphName}/export-tasks/${taskId}`
     // })
-    
+      
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ data: { success: true, message: '导出任务删除成功' } })
+        resolve({ success: true, message: '导出任务删除成功' })
       }, 500)
     })
   },
 
   cancelExportTask(connectionId, graphName, taskId) {
-    // TODO: 调用真实API
+    // TODO: 调用真实 API
     // return request({
     //   method: 'post',
     //   url: `/connections/${connectionId}/graphs/${graphName}/export-tasks/${taskId}/cancel`
     // })
-    
+      
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ data: { success: true, message: '导出任务取消成功' } })
+        resolve({ success: true, message: '导出任务取消成功' })
       }, 500)
     })
   },
 
   // 查询执行
   executeQuery(connectionId, graphName, language, query) {
-    // TODO: 调用真实API
+    // TODO: 调用真实 API
     // return request({
     //   method: 'post',
     //   url: `/connections/${connectionId}/graphs/${graphName}/query`,
@@ -330,7 +265,7 @@ export const graphApi = {
     //     query
     //   }
     // })
-
+  
     // 临时模拟数据
     return new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -360,7 +295,7 @@ export const graphApi = {
               { id: 'edge10', source: 'node5', target: 'node8', label: 'PARTNERS_WITH', properties: { since: '2021-06-15' } }
             ]
           }
-          resolve({ data: mockData })
+          resolve(mockData)
         } catch (error) {
           reject(error)
         }

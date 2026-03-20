@@ -4,6 +4,7 @@ import com.graphdb.api.dto.Result;
 import com.graphdb.service.GraphService;
 import com.graphdb.core.model.GraphSchema;
 import com.graphdb.core.model.LabelType;
+import com.graphdb.core.model.IndexInfo;
 import com.graphdb.storage.entity.GraphInstanceEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,7 +33,7 @@ public class GraphController {
     @Operation(summary = "获取图列表", description = "获取指定连接下的所有图列表，支持按来源筛选")
     @GetMapping
     public Result<List<GraphInstanceEntity>> list(
-            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "连接ID", required = true) @PathVariable("connectionId") Long connectionId,
             @Parameter(description = "页码", example = "1") @RequestParam(required = false, name = "page") Integer page,
             @Parameter(name = "pageSize", description = "每页大小", example = "20") @RequestParam(required = false, name = "pageSize") Integer pageSize,
             @Parameter(description = "状态筛选") @RequestParam(required = false, name = "status") Integer status,
@@ -228,6 +229,84 @@ public class GraphController {
             @RequestBody Map<String, Object> request) {
         try {
             graphService.updateGraph(connectionId, graphName, request);
+            return Result.success(null);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取索引列表
+     */
+    @Operation(summary = "获取索引列表", description = "获取指定图的所有索引")
+    @GetMapping("/{graphName}/indexes")
+    public Result<List<IndexInfo>> getIndexes(
+            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "图名称", required = true) @PathVariable String graphName) {
+        try {
+            List<IndexInfo> indexes = graphService.getIndexes(connectionId, graphName);
+            return Result.success(indexes);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 创建索引
+     */
+    @Operation(summary = "创建索引", description = "在指定图中创建新的索引")
+    @PostMapping("/{graphName}/indexes")
+    public Result<Void> createIndex(
+            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "图名称", required = true) @PathVariable String graphName,
+            @RequestBody Map<String, Object> indexData) {
+        try {
+            IndexInfo indexInfo = new IndexInfo();
+            indexInfo.setName((String) indexData.get("name"));
+            indexInfo.setType((String) indexData.get("type"));
+
+            // 处理字段数组
+            if (indexData.get("fields") instanceof List) {
+                List<?> fieldsList = (List<?>) indexData.get("fields");
+                String[] fields = fieldsList.toArray(new String[0]);
+                indexInfo.setFields(fields);
+            }
+
+            graphService.createIndex(connectionId, graphName, indexInfo);
+            return Result.success(null);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 删除索引
+     */
+    @Operation(summary = "删除索引", description = "删除指定图中的索引")
+    @DeleteMapping("/{graphName}/indexes/{indexName}")
+    public Result<Void> deleteIndex(
+            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "图名称", required = true) @PathVariable String graphName,
+            @Parameter(description = "索引名称", required = true) @PathVariable String indexName) {
+        try {
+            graphService.deleteIndex(connectionId, graphName, indexName);
+            return Result.success(null);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 重建索引
+     */
+    @Operation(summary = "重建索引", description = "重建指定图中的索引")
+    @PostMapping("/{graphName}/indexes/{indexName}/rebuild")
+    public Result<Void> rebuildIndex(
+            @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
+            @Parameter(description = "图名称", required = true) @PathVariable String graphName,
+            @Parameter(description = "索引名称", required = true) @PathVariable String indexName) {
+        try {
+            graphService.rebuildIndex(connectionId, graphName, indexName);
             return Result.success(null);
         } catch (Exception e) {
             return Result.error(e.getMessage());

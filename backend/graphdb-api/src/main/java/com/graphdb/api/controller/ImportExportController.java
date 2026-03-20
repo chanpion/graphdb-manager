@@ -79,8 +79,8 @@ public class ImportExportController {
     public void exportVertices(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "节点类型筛选") @RequestParam(required = false) String nodeType,
-            @Parameter(description = "导出字段") @RequestParam(required = false) String fields,
+            @Parameter(description = "节点类型筛选") @RequestParam(required = false, name = "nodeType") String nodeType,
+            @Parameter(description = "导出字段") @RequestParam(required = false, name = "fields") String fields,
             HttpServletResponse response) throws IOException {
         try {
             response.setContentType("text/csv");
@@ -104,8 +104,8 @@ public class ImportExportController {
     public void exportEdges(
             @Parameter(description = "连接ID", required = true) @PathVariable Long connectionId,
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
-            @Parameter(description = "边类型筛选") @RequestParam(required = false) String edgeType,
-            @Parameter(description = "导出字段") @RequestParam(required = false) String fields,
+            @Parameter(description = "边类型筛选") @RequestParam(required = false, name = "edgeType") String edgeType,
+            @Parameter(description = "导出字段") @RequestParam(required = false, name = "fields") String fields,
             HttpServletResponse response) throws IOException {
         try {
             response.setContentType("text/csv");
@@ -147,7 +147,7 @@ public class ImportExportController {
             @Parameter(description = "图名称", required = true) @PathVariable String graphName,
             @Parameter(description = "上传文件", required = true) @RequestParam("file") MultipartFile file,
             @Parameter(description = "导入类型", required = true) @RequestParam("importType") String importType,
-            @Parameter(description = "字段映射") @RequestParam(required = false) String fieldMapping) {
+            @Parameter(description = "字段映射") @RequestParam(required = false, name = "fieldMapping") String fieldMapping) {
         try {
             if (file.isEmpty()) {
                 return Result.error("上传的文件为空");

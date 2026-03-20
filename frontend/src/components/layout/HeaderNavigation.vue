@@ -26,8 +26,8 @@
 
       <!-- 右侧：功能区域 -->
       <div class="nav-right">
-        <!-- 图选择器 -->
-        <div class="graph-selector">
+        <!-- 图选择器（只在图建模、图数据、图分析页面显示） -->
+        <div class="graph-selector" v-if="showGraphSelector">
           <el-select
             v-model="selectedGraph"
             placeholder="选择图"
@@ -64,10 +64,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useTabStore } from '@/stores/tab'
 import { useGraphStore } from '@/stores/graph'
-import { 
+import {
   DataLine
 } from '@element-plus/icons-vue'
 
@@ -95,9 +96,18 @@ const emit = defineEmits([
   'graph-change'
 ])
 
+const route = useRoute()
 const tabStore = useTabStore()
 const graphStore = useGraphStore()
 const { selectedConnectionId, selectedGraphName, graphs } = storeToRefs(graphStore)
+
+// 需要显示图选择器的页面
+const pagesWithGraphSelector = ['DataModeling', 'DataExplorer', 'GraphVisualization']
+
+// 判断当前页面是否需要显示图选择器
+const showGraphSelector = computed(() => {
+  return pagesWithGraphSelector.includes(route.name)
+})
 
 // 主题状态
 const isDarkTheme = ref(false)

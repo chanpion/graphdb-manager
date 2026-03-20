@@ -16,7 +16,7 @@ public class PropertyDefinition {
     /**
      * 属性类型：STRING, INTEGER, FLOAT, BOOLEAN, DATE, etc.
      */
-    private String type;
+    private String dataType;
     
     /**
      * 是否必填

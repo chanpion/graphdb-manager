@@ -13,6 +13,7 @@
         v-for="connection in connections"
         :key="connection.id"
         :connection="connection"
+        @click="openGraphManagement"
         @test="testConnection"
         @edit="editConnection"
         @delete="deleteConnection"
@@ -35,15 +36,15 @@
         <el-form-item label="连接名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入连接名称" maxlength="50" show-word-limit />
         </el-form-item>
-        <el-form-item label="数据库类型" prop="databaseType">
-          <el-select v-model="form.databaseType" placeholder="请选择数据库类型" @change="handleTypeChange">
+        <el-form-item label="数据库类型" prop="type">
+          <el-select v-model="form.type" placeholder="请选择数据库类型" @change="handleTypeChange">
             <el-option label="Neo4j" value="NEO4J" />
             <el-option label="NebulaGraph" value="NEBULA" />
             <el-option label="JanusGraph" value="JANUS" />
           </el-select>
         </el-form-item>
         <el-form-item label="主机地址" prop="host">
-          <el-input v-model="form.host" placeholder="请输入主机地址，如 localhost 或 127.0.0.1" />
+          <el-input v-model="form.host" placeholder="请输入主机地址，多个地址请用逗号分隔，如：localhost,192.168.1.1" />
         </el-form-item>
         <el-form-item label="端口" prop="port">
           <el-input-number v-model="form.port" :min="1" :max="65535" />
@@ -137,10 +138,13 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Warning } from '@element-plus/icons-vue'
 import ConnectionCard from '../components/connection/ConnectionCard.vue'
 import { connectionApi } from '../api/connection'
+
+const router = useRouter()
 
 const connections = ref([])
 const createDialogVisible = ref(false)
@@ -157,13 +161,13 @@ const defaultPorts = {
 
 const form = reactive({
   name: '',
-  databaseType: 'NEO4J',
+  type: 'NEO4J',
   host: '',
   port: 7687,
   username: '',
   password: '',
   description: '',
-  jsonParams: '', // JSON格式参数
+  jsonParams: '', // JSON 格式参数
   // JanusGraph 特有字段
   storageBackend: 'cql',
   storageHost: ''
@@ -183,7 +187,7 @@ const formRules = computed(() => {
     ],
     host: [
       { required: true, message: '请输入主机地址', trigger: 'blur' },
-      { pattern: /^[\w.-]+$/, message: '请输入有效的主机地址', trigger: 'blur' }
+      { pattern: /^[\w.-]+(,[\w.-]+)*$/, message: '请输入有效的主机地址，多个地址用逗号分隔', trigger: 'blur' }
     ],
     port: [
       { required: true, message: '请输入端口号', trigger: 'blur' },
@@ -195,7 +199,7 @@ const formRules = computed(() => {
   }
 
   // JanusGraph 需要额外验证（仅存储后端）
-  if (form.databaseType === 'JANUS') {
+  if (form.type === 'JANUS') {
     baseRules.storageBackend = [
       { required: true, message: '请选择存储后端', trigger: 'change' }
     ]
@@ -206,14 +210,14 @@ const formRules = computed(() => {
 
 // 数据库字段标签和占位符已统一为"数据库名称"
 
-// JSON参数提示信息
+// JSON 参数提示信息
 const jsonParamsTip = computed(() => {
   const tips = {
-    'NEO4J': 'Neo4j数据库额外参数，如加密设置、连接池配置等',
-    'NEBULA': 'NebulaGraph数据库额外参数，如超时设置、重试策略等',
-    'JANUS': 'JanusGraph数据库额外参数，如存储配置、性能优化等'
+    'NEO4J': 'Neo4j 数据库额外参数，如加密设置、连接池配置等',
+    'NEBULA': 'NebulaGraph 数据库额外参数，如超时设置、重试策略等',
+    'JANUS': 'JanusGraph 数据库额外参数，如存储配置、性能优化等'
   }
-  return tips[form.databaseType] || '数据库额外参数配置'
+  return tips[form.type] || '数据库额外参数配置'
 })
 
 // 数据库类型变化处理
@@ -283,7 +287,7 @@ const loadDefaultParams = () => {
     }
   }
   
-  form.jsonParams = JSON.stringify(defaults[form.databaseType] || {}, null, 2)
+  form.jsonParams = JSON.stringify(defaults[form.type] || {}, null, 2)
   jsonError.value = ''
   ElMessage.success('已加载默认参数')
 }
@@ -358,8 +362,7 @@ const editConnection = (row) => {
   isEditMode.value = true
   editingId.value = row.id
   form.name = row.name
-  // 后端返回的字段是 type，不是 databaseType
-  form.databaseType = row.type || row.databaseType
+  form.type = row.type
   form.host = row.host
   form.port = row.port
   form.username = row.username || ''
@@ -384,7 +387,7 @@ const deleteConnection = async (id) => {
 
 const resetForm = () => {
   form.name = ''
-  form.databaseType = 'NEO4J'
+  form.type = 'NEO4J'
   form.host = ''
   form.port = defaultPorts['NEO4J']
   form.username = ''
@@ -394,6 +397,16 @@ const resetForm = () => {
   // JanusGraph 特有字段
   form.storageBackend = 'cql'
   form.storageHost = ''
+}
+
+const openGraphManagement = (connection) => {
+  // 跳转到图管理页面，并传递连接ID
+  router.push({
+    name: 'GraphManagement',
+    query: {
+      connectionId: connection.id
+    }
+  })
 }
 
 loadConnections()

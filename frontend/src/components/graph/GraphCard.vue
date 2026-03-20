@@ -8,6 +8,9 @@
       </div>
       <div class="graph-info">
         <h4 class="graph-name">{{ graph.name }}</h4>
+        <p class="graph-identifier" v-if="graph.graphName && graph.graphName !== graph.name">
+          <el-tag size="small" type="info" effect="plain">{{ graph.graphName }}</el-tag>
+        </p>
         <p class="graph-description" v-if="graph.description">{{ graph.description }}</p>
         <div class="graph-meta-row">
           <span class="database-type">{{ graph.databaseType || '未知' }}</span>
@@ -203,13 +206,18 @@ const formatTime = (timestamp) => {
 }
 
 .graph-name {
-  margin: 0 0 6px 0; /* 减小间距 */
-  font-size: 15px; /* 减小字体大小 */
+  margin: 0 0 4px 0;
+  font-size: 15px;
   font-weight: 600;
   color: #303133;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.graph-identifier {
+  margin: 0 0 6px 0;
+  font-size: 12px;
 }
 
 .graph-description {
